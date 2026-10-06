@@ -69,6 +69,7 @@ tr.miss td{color:var(--mute)}
   tr,dl.kv,.call,.sig{break-inside:avoid}
   h2{break-after:avoid}
   .foot{position:fixed;bottom:0;left:0;right:0;border-top:1px solid #000;background:#fff;font-weight:700;text-align:center;font-size:8pt;color:#000}
+  .example{display:none}
   @page{margin:14mm 12mm 16mm}
 }
 </style>
@@ -95,12 +96,15 @@ const fmtDist = (l) => l.miles === 0 ? "Subject property" : l.miles === 0.125 &&
 const BANDS = [[0, 0, "Subject"], [0, 0.125, "≤1/8"], [0.125, 0.25, "1/8–1/4"], [0.25, 0.5, "1/4–1/2"], [0.5, 1, "1/2–1"]];
 const inBand = (m, [lo, hi]) => hi === 0 ? m === 0 : m > lo && m <= hi + 1e-9;
 
+const EXAMPLE = "2125 Hennepin Ave E, Minneapolis, MN";
 function params() { return new URLSearchParams(location.search); }
 
 async function run() {
   const p = params();
+  // open on a worked example, never a blank page; the visitor's own address replaces it
+  const example = !p.get("address");
+  if (example) p.set("address", EXAMPLE);
   const address = p.get("address");
-  if (!address) { out.innerHTML = ""; return; }
   $("#q").value = address;
   out.innerHTML = `<p class="status">Searching EPA, MPCA, the county parcel record, USGS and the Library of Congress…</p>`;
   const t0 = performance.now();
@@ -112,6 +116,7 @@ async function run() {
   if (r.error) { out.innerHTML = `<p class="err">${esc(r.error)}</p>`; return; }
   if (r.choose) return choose(address, r.choose);
   render(r, Math.round(performance.now() - t0));
+  if (example) out.insertAdjacentHTML("afterbegin", `<p class="status example">Example report for ${esc(EXAMPLE.replace(", MN", ""))}. Type any Minnesota address above to run your own.</p>`);
 }
 
 function choose(address, c) {
