@@ -37,6 +37,11 @@ test("risk rules: on-subject leak is high; a closed leak nearby is not", () => {
   const near = [{ key: "F1", list: "lust", miles: 0.2, open: false }];
   assert.equal(riskCall(near).suggestion, "Low risk");
   assert.equal(riskCall([{ key: "F1", list: "lust", miles: 0, open: false }]).suggestion, "High risk");
-  assert.equal(riskCall([{ key: "F1", list: "lust", miles: 0.3, open: true }]).suggestion, "High risk");
+  assert.equal(riskCall([{ key: "F1", list: "lust", miles: 0.3, open: true }]).suggestion, "Low risk");   // active leak past 1/10 mi
+  assert.equal(riskCall([{ key: "F1", list: "lust", miles: 0.09, open: true }]).suggestion, "High risk");
+  assert.equal(riskCall([{ key: "F1", list: "state_superfund", miles: 0.3, open: true }]).suggestion, "High risk");
+  assert.equal(riskCall([{ key: "F1", list: "npl", miles: 0.9, open: true }]).suggestion, "Low risk");   // listed, but past 1/3 mi
+  assert.equal(riskCall([{ key: "F1", list: "state_hw_gen", miles: 0, open: true, detail: "Hazardous Waste, Very small quantity generator" }]).suggestion, "Low risk"); // the dentist
+  assert.equal(riskCall([{ key: "F1", list: "state_hw_gen", miles: 0, open: true, detail: "Hazardous Waste, Small quantity generator" }]).suggestion, "High risk");
   assert.equal(riskCall([{ key: "F1", list: "rcra_gen", miles: 0.1, open: true }]).suggestion, "Low risk");
 });

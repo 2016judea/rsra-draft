@@ -22,6 +22,15 @@ SRC = "https://data.epa.gov/efservice/sems.envirofacts_site/fk_ref_state_code/eq
 GEOCODER = "https://geocoding.geo.census.gov/geocoder/locations/addressbatch"
 
 
+DISAGREE_MILES = 0.5
+
+
+def miles(lat1, lon1, lat2, lon2):
+    import math
+    k = math.cos(math.radians((lat1 + lat2) / 2))
+    return math.hypot((lon1 - lon2) * 69.172 * k, (lat1 - lat2) * 69.0)
+
+
 def fetch(url):
     with urllib.request.urlopen(url, timeout=120) as r:
         return json.load(r)
@@ -52,14 +61,27 @@ def batch_geocode(rows):
 
 def main():
     raw = fetch(SRC)
+    # Geocode EVERY site with a street address, not only those missing a
+    # coordinate: EPA's own point is sometimes a city centroid (VA Medical
+    # Center Minneapolis, 1 Veterans Drive, sits on City Hall) or simply wrong
+    # (a Saint Paul address placed 40 miles away). Where the two disagree by
+    # more than DISAGREE_MILES the address wins and the record says so.
     need = [(r["epa_id"], r["street_addr_txt"] or "", r["city_name"] or "", r["zip_code"] or "")
-            for r in raw if r["primary_latitude_decimal_val"] is None and r["street_addr_txt"]]
+            for r in raw if r["street_addr_txt"]]
     geo = batch_geocode(need) if need else {}
-    sites, unplaced = [], 0
+    sites, unplaced, corrected = [], 0, 0
     for r in raw:
         lat, lon, how = r["primary_latitude_decimal_val"], r["primary_longitude_decimal_val"], "EPA SEMS coordinate"
-        if lat is None and r["epa_id"] in geo:
-            (lat, lon), how = geo[r["epa_id"]], "Census geocode of the SEMS street address"
+        g = geo.get(r["epa_id"])
+        if lat is None and g:
+            (lat, lon), how = g, "Census geocode of the SEMS street address"
+        elif lat is not None and g:
+            off = miles(float(lat), float(lon), *g)
+            if off > DISAGREE_MILES:
+                corrected += 1
+                (lat, lon), how = g, f"Census geocode of the SEMS street address (EPA's coordinate sits {off:.1f} mi from that address)"
+            else:
+                how = "EPA SEMS coordinate, agrees with its street address"
         if lat is None:
             unplaced += 1
         if r["npl_status_code"] == "F":
@@ -85,10 +107,10 @@ def main():
     doc = {
         "_comment": "Written by scripts/build_sems.py; do not hand-edit.",
         "source": SRC, "built_on": datetime.date.today().isoformat(),
-        "counts": counts, "unplaced": unplaced, "sites": sites,
+        "counts": counts, "unplaced": unplaced, "epa_coordinate_replaced": corrected, "sites": sites,
     }
     OUT.write_text(json.dumps(doc, separators=(",", ":")))
-    print(f"{len(sites)} SEMS sites, {unplaced} without a coordinate, by list {counts}")
+    print(f"{len(sites)} SEMS sites, {unplaced} without a coordinate, {corrected} EPA coordinates replaced, by list {counts}")
 
 
 if __name__ == "__main__":

@@ -366,14 +366,37 @@ async function sanborn(subject) {
 
 // ---- step 4: the suggested risk call ---------------------------------------
 const RELEASE_LISTS = new Set(["npl", "delisted_npl", "sems", "sems_archive", "corracts", "brownfields_fed", "state_superfund", "state_site_assessment", "state_rcra_remediation", "landfill", "lust", "vic", "brownfields_state", "state_spills", "state_ic"]);
-const OPEN_CLEANUP_LISTS = new Set(["npl", "sems", "corracts", "state_superfund", "state_site_assessment", "state_rcra_remediation", "lust", "vic", "brownfields_state"]);
+// R3 and R4 use the ASTM E2600-22 vapor encroachment screening distances
+// (1/3 mile for non-petroleum releases, 1/10 mile for petroleum), applied in
+// every direction because groundwater flow direction is not known here. The
+// 312.26 search distances decide what is LISTED; these decide what suggests
+// High. An active file between the two still shows in section 3 for the EP.
+const VEC_NONPET_MILES = 1 / 3, VEC_PET_MILES = 0.1;
+const NONPET_LISTS = new Set(["npl", "sems", "corracts", "state_superfund", "state_rcra_remediation"]);
+// Site assessments, VIC enrollments and brownfield files are mostly
+// investigations and redevelopment due diligence rather than confirmed
+// plumes, and central Minneapolis holds dozens within 1/3 mile of almost any
+// lot. They suggest High only on an adjoining property.
+const INVESTIGATION_LISTS = new Set(["state_site_assessment", "vic", "brownfields_state", "brownfields_fed"]);
+const PET_LISTS = new Set(["lust"]);
+// Very small and minimal-quantity generators are left out of R2 on purpose: the
+// largest group of them in the MPCA register is dentists' offices, registered
+// for amalgam, which is not a use of environmental concern on a property.
+const significantHandler = (h) =>
+  h.list === "tanks" || h.list === "rcra_tsdf" ||
+  (h.list === "rcra_gen" && /\b(LQG|SQG)\b/.test(h.detail || "")) ||
+  (h.list === "state_hw_gen" && /(?<!Very )(Large|Small) quantity generator/.test(h.detail || ""));
 export const RULES = [
   { id: "R1", text: "The subject parcel itself appears on any release, cleanup, landfill, spill or control list, open or closed.",
     test: (h) => h.miles === 0 && RELEASE_LISTS.has(h.list) },
-  { id: "R2", text: "The subject parcel holds a registered storage tank or a hazardous waste generator record (a use of concern on the property).",
-    test: (h) => h.miles === 0 && ["tanks", "rcra_gen", "state_hw_gen", "rcra_tsdf"].includes(h.list) },
-  { id: "R3", text: "An ACTIVE NPL, Superfund, corrective action, leak site, voluntary cleanup or brownfield file sits within that list's search distance.",
-    test: (h) => h.miles > 0 && OPEN_CLEANUP_LISTS.has(h.list) && h.open === true },
+  { id: "R2", text: "The subject parcel holds a registered storage tank, a treatment/storage/disposal facility, or a large or small quantity hazardous waste generator.",
+    test: (h) => h.miles === 0 && significantHandler(h) },
+  { id: "R3", text: "An ACTIVE NPL, SEMS, Superfund, or RCRA corrective action file within 1/3 mile (ASTM E2600-22 non-petroleum vapor screening distance).",
+    test: (h) => h.miles > 0 && h.miles <= VEC_NONPET_MILES && NONPET_LISTS.has(h.list) && h.open === true },
+  { id: "R4", text: "An ACTIVE petroleum leak site within 1/10 mile (ASTM E2600-22 petroleum vapor screening distance).",
+    test: (h) => h.miles > 0 && h.miles <= VEC_PET_MILES && PET_LISTS.has(h.list) && h.open === true },
+  { id: "R5", text: "An ACTIVE site assessment, voluntary cleanup or brownfield file on an adjoining property (within 1/8 mile).",
+    test: (h) => h.miles > 0 && h.miles <= LISTS.adjoining_miles && INVESTIGATION_LISTS.has(h.list) && h.open === true },
 ];
 export function riskCall(hits) {
   const fired = RULES.map((r) => ({ id: r.id, text: r.text, rows: hits.filter(r.test).map((h) => h.key) }));
