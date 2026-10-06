@@ -388,9 +388,9 @@ const significantHandler = (h) =>
   (h.list === "state_hw_gen" && /(?<!Very )(Large|Small) quantity generator/.test(h.detail || ""));
 export const RULES = [
   { id: "R1", text: "The subject parcel itself appears on any release, cleanup, landfill, spill or control list, open or closed.",
-    test: (h) => h.miles === 0 && RELEASE_LISTS.has(h.list) },
+    test: (h) => h.miles === 0 && !h.address_differs && RELEASE_LISTS.has(h.list) },
   { id: "R2", text: "The subject parcel holds a registered storage tank, a treatment/storage/disposal facility, or a large or small quantity hazardous waste generator.",
-    test: (h) => h.miles === 0 && significantHandler(h) },
+    test: (h) => h.miles === 0 && !h.address_differs && significantHandler(h) },
   { id: "R3", text: "An ACTIVE NPL, SEMS, Superfund, or RCRA corrective action file within 1/3 mile (ASTM E2600-22 non-petroleum vapor screening distance).",
     test: (h) => h.miles > 0 && h.miles <= VEC_NONPET_MILES && NONPET_LISTS.has(h.list) && h.open === true },
   { id: "R4", text: "An ACTIVE petroleum leak site within 1/10 mile (ASTM E2600-22 petroleum vapor screening distance).",
@@ -441,6 +441,24 @@ export async function buildReport(address, { pin, usePoint } = {}) {
       h.miles = 0;
     }
   }
+  // A record the agency placed only at a ZIP or city centroid has no real
+  // location; measuring from it would put every downtown dentist on whichever
+  // parcel holds the 55402 centroid. Those come out of the distance table and
+  // are listed by name instead.
+  const unlocated = [];
+  for (let i = hits.length - 1; i >= 0; i--) {
+    if (/centroid/i.test(hits[i].located_by || "")) unlocated.push(...hits.splice(i, 1));
+  }
+  // A point inside the subject parcel whose own address names a different
+  // building is an agency geocoding slip as often as it is a second address
+  // for the same lot. It stays on the subject, flagged, and does not drive R1/R2.
+  for (const h of hits) {
+    const k = addrKey(h.address);
+    if (h.miles === 0 && k && subj && k !== subj) {
+      h.address_differs = true;
+      h.located_by = `${h.located_by ? h.located_by + "; " : ""}point is inside the subject parcel but the address on file is not the subject's`;
+    }
+  }
   hits.sort((a, b) => a.miles - b.miles || a.list.localeCompare(b.list));
   hits.forEach((h, i) => { h.key = `F${i + 1}`; h.miles = Math.round(h.miles * 1000) / 1000; });
   const failedSource = (src) => errors.some((e) => e.startsWith(src));
@@ -458,7 +476,9 @@ export async function buildReport(address, { pin, usePoint } = {}) {
   return {
     generated: new Date().toISOString(), elapsed_ms: Date.now() - started,
     subject: { ...subject, rings: undefined, has_boundary: !!subject.rings },
-    lists, findings: hits, sems_unplaced: sems.unplaced, sems_built_on: SEMS.built_on,
+    lists, findings: hits, sems_unplaced: sems.unplaced,
+    unlocated: unlocated.filter((h) => !subject.city || (h.address || "").toLowerCase().includes(subject.city.toLowerCase()))
+      .map(({ name, address, list, status, url, source, located_by }) => ({ name, address, list, status, url, source, located_by })), sems_built_on: SEMS.built_on,
     echo_rows_searched: echo?.searched ?? null,
     historical: { timeline, earliest_year: earliest, reaches_1940: earliest != null && earliest <= 1940,
       to_review: [
