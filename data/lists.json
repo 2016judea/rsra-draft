@@ -1,0 +1,241 @@
+{
+ "_comment": "The government record lists an RSRA searches, the distance each is searched, and where each distance comes from. The search distance used is the LARGER of the 40 CFR 312.26(c) distance and the ASTM E1527-21 Table 1 distance. Distances are measured from the subject parcel boundary, as 312.26(d) specifies. 'adjoining' is searched as 1/8 mile from the boundary, which reaches across a public street to the properties ASTM calls adjoining; the EP may change any distance under 312.26(d) and must document why.",
+ "adjoining_miles": 0.125,
+ "citations": {
+  "cfr": "40 CFR 312.26, eCFR, read 2026-10-06: https://www.ecfr.gov/current/title-40/chapter-I/subchapter-J/part-312/subpart-C/section-312.26",
+  "astm": "ASTM E1527-21 section 8.2.1, Table 1 (Standard Environmental Record Sources and approximate minimum search distance), as commonly reproduced in Phase I reports",
+  "sba": "SBA SOP 50 10 8 and Procedural Notice 5000-866054 (2025-03-20): an RSRA searches the databases an AAI-compliant Phase I searches"
+ },
+ "lists": [
+  {
+   "id": "npl",
+   "name": "Federal NPL (National Priorities List)",
+   "level": "Federal",
+   "cfr": "312.26(c)(1)(i)",
+   "cfr_miles": 1.0,
+   "astm_miles": 1.0,
+   "source": "EPA SEMS (Envirofacts), cached",
+   "covered": true
+  },
+  {
+   "id": "delisted_npl",
+   "name": "Federal delisted NPL",
+   "level": "Federal",
+   "cfr": "312.26(c)(2)(i)",
+   "cfr_miles": 0.5,
+   "astm_miles": 0.5,
+   "source": "EPA SEMS (Envirofacts), cached",
+   "covered": true
+  },
+  {
+   "id": "sems",
+   "name": "Federal SEMS (formerly CERCLIS), active non-NPL",
+   "level": "Federal",
+   "cfr": "312.26(b)(3)",
+   "cfr_miles": null,
+   "astm_miles": 0.5,
+   "source": "EPA SEMS (Envirofacts), cached",
+   "covered": true
+  },
+  {
+   "id": "sems_archive",
+   "name": "Federal SEMS archive (former CERCLIS, NFRAP)",
+   "level": "Federal",
+   "cfr": "312.26(c)(2)(iii)",
+   "cfr_miles": 0.5,
+   "astm_miles": 0.5,
+   "source": "EPA SEMS (Envirofacts), cached; addresses geocoded by the Census geocoder",
+   "covered": true
+  },
+  {
+   "id": "corracts",
+   "name": "Federal RCRA corrective action (CORRACTS)",
+   "level": "Federal",
+   "cfr": "312.26(c)(1)(ii)",
+   "cfr_miles": 1.0,
+   "astm_miles": 1.0,
+   "source": "EPA ECHO RCRA facility search, live (CleanupActionFlag = Y)",
+   "covered": true
+  },
+  {
+   "id": "rcra_tsdf",
+   "name": "Federal RCRA treatment, storage and disposal facilities",
+   "level": "Federal",
+   "cfr": "312.26(b)(2)",
+   "cfr_miles": null,
+   "astm_miles": 0.5,
+   "source": "EPA ECHO RCRA facility search, live",
+   "covered": true
+  },
+  {
+   "id": "rcra_gen",
+   "name": "Federal RCRA generators (LQG, SQG, VSQG)",
+   "level": "Federal",
+   "cfr": "312.26(c)(3)(i)",
+   "cfr_miles": "adjoining",
+   "astm_miles": "adjoining",
+   "source": "EPA ECHO RCRA facility search, live",
+   "covered": true
+  },
+  {
+   "id": "fed_icec",
+   "name": "Federal institutional / engineering control registries",
+   "level": "Federal",
+   "cfr": "312.26(b)(6)-(7), (c)(2)(ii)",
+   "cfr_miles": 0.5,
+   "astm_miles": "property",
+   "source": "No free spatial API found. EPA SEMS site profiles carry ICs for NPL sites and are linked from every SEMS hit.",
+   "covered": false
+  },
+  {
+   "id": "erns",
+   "name": "Federal ERNS (Emergency Response Notification System)",
+   "level": "Federal",
+   "cfr": "312.26(b)(5)",
+   "cfr_miles": "property",
+   "astm_miles": "property",
+   "source": "National Response Center data is published as yearly spreadsheets with free-text locations, not a spatial API. Not searched.",
+   "covered": false
+  },
+  {
+   "id": "brownfields_fed",
+   "name": "Federal brownfields (EPA ACRES)",
+   "level": "Federal",
+   "cfr": "312.26(c)(1)(iii)",
+   "cfr_miles": 0.5,
+   "astm_miles": 0.5,
+   "source": "EPA EMEF Brownfields layer (ACRES), live",
+   "covered": true
+  },
+  {
+   "id": "state_superfund",
+   "name": "State Superfund / PLP list (NPL-equivalent)",
+   "level": "State",
+   "cfr": "312.26(c)(1)(i)",
+   "cfr_miles": 1.0,
+   "astm_miles": 1.0,
+   "source": "MPCA Remediation Sites layer, live (per-project status): Superfund Site / sub-area",
+   "covered": true
+  },
+  {
+   "id": "state_site_assessment",
+   "name": "State site assessment / non-listed Superfund (CERCLIS-equivalent)",
+   "level": "State",
+   "cfr": "312.26(c)(1)(iii)",
+   "cfr_miles": 0.5,
+   "astm_miles": 0.5,
+   "source": "MPCA Remediation Sites layer, live (per-project status): Site Assessment, Integrated Remediation",
+   "covered": true
+  },
+  {
+   "id": "state_rcra_remediation",
+   "name": "State RCRA remediation (state corrective action)",
+   "level": "State",
+   "cfr": "312.26(c)(1)(ii)",
+   "cfr_miles": 1.0,
+   "astm_miles": 1.0,
+   "source": "MPCA Remediation Sites layer, live (per-project status): RCRA Remediation Site",
+   "covered": true
+  },
+  {
+   "id": "landfill",
+   "name": "State landfill / solid waste facilities",
+   "level": "State",
+   "cfr": "312.26(c)(3)(ii)",
+   "cfr_miles": 0.5,
+   "astm_miles": 0.5,
+   "source": "MPCA What's In My Neighborhood, live (Solid Waste activities)",
+   "covered": true
+  },
+  {
+   "id": "lust",
+   "name": "State leaking storage tanks (LUST / petroleum leak sites)",
+   "level": "State",
+   "cfr": "312.26(c)(1)(iv)",
+   "cfr_miles": 0.5,
+   "astm_miles": 0.5,
+   "source": "MPCA Remediation Sites layer, live (per-project status): Leak Site",
+   "covered": true
+  },
+  {
+   "id": "tanks",
+   "name": "State registered storage tanks (UST / AST)",
+   "level": "State",
+   "cfr": "312.26(c)(3)(iii)",
+   "cfr_miles": "adjoining",
+   "astm_miles": "adjoining",
+   "source": "MPCA What's In My Neighborhood, live (Underground / Aboveground Tanks); status is the site's active flag",
+   "covered": true
+  },
+  {
+   "id": "state_ic",
+   "name": "State institutional / engineering controls",
+   "level": "State",
+   "cfr": "312.26(b)(7), (c)(2)(ii)",
+   "cfr_miles": 0.5,
+   "astm_miles": "property",
+   "source": "MPCA Remediation Sites layer, live (per-project status): ic = Y",
+   "covered": true
+  },
+  {
+   "id": "vic",
+   "name": "State voluntary cleanup (VIC, Petroleum Brownfields)",
+   "level": "State",
+   "cfr": "312.26(c)(1)(iii)",
+   "cfr_miles": 0.5,
+   "astm_miles": 0.5,
+   "source": "MPCA Remediation Sites layer, live (per-project status): Brownfield Site flagged VIC or Petroleum Brownfield",
+   "covered": true
+  },
+  {
+   "id": "brownfields_state",
+   "name": "State brownfields",
+   "level": "State",
+   "cfr": "312.26(c)(1)(iii)",
+   "cfr_miles": 0.5,
+   "astm_miles": 0.5,
+   "source": "MPCA Remediation Sites layer, live (per-project status): Brownfield Site",
+   "covered": true
+  },
+  {
+   "id": "state_spills",
+   "name": "State emergency response / spill files",
+   "level": "State",
+   "cfr": "312.26(b)(2)",
+   "cfr_miles": "property",
+   "astm_miles": "property",
+   "source": "MPCA Remediation Sites layer, live (per-project status): Emergency Response Site. The State Duty Officer's spill log is not a public spatial layer.",
+   "covered": true
+  },
+  {
+   "id": "state_hw_gen",
+   "name": "State hazardous waste generators",
+   "level": "State",
+   "cfr": "312.26(c)(3)(i)",
+   "cfr_miles": "adjoining",
+   "astm_miles": "adjoining",
+   "source": "MPCA What's In My Neighborhood, live (Hazardous Waste); status is the site's active flag",
+   "covered": true
+  },
+  {
+   "id": "mda_incidents",
+   "name": "MN Dept. of Agriculture agricultural chemical incidents",
+   "level": "State",
+   "cfr": "312.26(c)(1)(iii)",
+   "cfr_miles": 0.5,
+   "astm_miles": 0.5,
+   "source": "MDA publishes no free spatial API for incident sites. Not searched.",
+   "covered": false
+  },
+  {
+   "id": "local",
+   "name": "Local lists (city brownfields, fire department tank and spill files, building permits)",
+   "level": "Local",
+   "cfr": "312.26(a)",
+   "cfr_miles": "property",
+   "astm_miles": "property",
+   "source": "Not searched. These sit with the city and are requested by the EP.",
+   "covered": false
+  }
+ ]
+}

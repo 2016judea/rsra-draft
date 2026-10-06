@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RSRA Draft</title>
+<meta name="description" content="Type a Minnesota address, get a draft SBA Records Search with Risk Assessment for an Environmental Professional to review and sign.">
+<style>
+:root{--ink:#16181d;--mute:#5d636e;--line:#d9dce2;--soft:#f3f4f6;--bg:#fff;--accent:#7a2e1f;--hi:#b3261e;--lo:#1e6b3a;--stamp:#b3261e}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ink:#e8e9ec;--mute:#a1a6b0;--line:#3a3e46;--soft:#22252b;--bg:#15171b;--accent:#e39a85;--hi:#ff8a80;--lo:#7fd39b;--stamp:#ff8a80}}
+:root[data-theme="dark"]{--ink:#e8e9ec;--mute:#a1a6b0;--line:#3a3e46;--soft:#22252b;--bg:#15171b;--accent:#e39a85;--hi:#ff8a80;--lo:#7fd39b;--stamp:#ff8a80}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+a{color:var(--accent)}
+.bar{border-bottom:1px solid var(--line);padding:20px 16px}
+.bar-in{max-width:1080px;margin:0 auto}
+.bar h1{font-size:20px;margin:0 0 4px}
+.bar p{margin:0 0 12px;color:var(--mute)}
+form{display:flex;gap:8px;flex-wrap:wrap}
+input[type=text]{flex:1 1 280px;min-width:0;font-size:16px;padding:11px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+button{font-size:16px;padding:11px 16px;border-radius:6px;border:1px solid var(--ink);background:var(--ink);color:var(--bg);cursor:pointer}
+button.ghost{background:transparent;color:var(--ink)}
+.try{margin-top:10px;font-size:13px;color:var(--mute)}
+.try a{margin-right:10px}
+main{max-width:1080px;margin:0 auto;padding:20px 16px 60px}
+.status{color:var(--mute)}
+.err{color:var(--hi)}
+.doc h2{font-size:17px;margin:28px 0 8px;padding-bottom:4px;border-bottom:2px solid var(--ink)}
+.doc h3{font-size:15px;margin:18px 0 6px}
+.stamp{border:3px solid var(--stamp);color:var(--stamp);font-weight:800;letter-spacing:.06em;text-align:center;padding:8px 10px;font-size:15px;margin:0 0 14px}
+.title{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+.title h1{font-size:24px;margin:0}
+.meta{color:var(--mute);font-size:13px}
+dl.kv{display:grid;grid-template-columns:200px 1fr;gap:4px 14px;margin:0}
+dl.kv dt{color:var(--mute)}
+dl.kv dd{margin:0;overflow-wrap:anywhere}
+.wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border-bottom:1px solid var(--line);padding:5px 6px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:600}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.miss td{color:var(--mute)}
+.call{display:flex;gap:16px;align-items:center;flex-wrap:wrap;border:1px solid var(--line);padding:12px 14px;border-radius:6px}
+.call b{font-size:22px}
+.call .High{color:var(--hi)}.call .Low{color:var(--lo)}
+.fired{color:var(--hi);font-weight:600}
+.k{font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.pill{display:inline-block;border:1px solid var(--line);border-radius:10px;padding:0 6px;font-size:12px;white-space:nowrap}
+.pill.open{border-color:var(--hi);color:var(--hi)}
+.choose li{margin:6px 0}
+.choose button{font-size:14px;padding:6px 10px}
+.sig{display:grid;grid-template-columns:1fr 1fr;gap:18px 24px;margin-top:10px}
+.line{border-bottom:1px solid var(--ink);min-height:30px;padding:4px 2px;outline:none}
+.line:empty::before{content:attr(data-ph);color:var(--mute);font-size:12px}
+.lab{font-size:12px;color:var(--mute);margin-top:3px}
+.box{display:inline-block;width:14px;height:14px;border:1.5px solid var(--ink);vertical-align:-2px;margin-right:6px}
+.actions{display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap}
+.foot{position:static;font-size:11px;color:var(--mute);margin-top:30px;border-top:1px solid var(--line);padding-top:6px}
+@media (max-width:640px){dl.kv{grid-template-columns:1fr}dl.kv dt{margin-top:6px}.sig{grid-template-columns:1fr}.title h1{font-size:20px}}
+@media print{
+  :root{--ink:#000;--mute:#444;--line:#bbb;--soft:#eee;--bg:#fff;--accent:#000;--hi:#000;--lo:#000;--stamp:#000}
+  .bar,.actions,.noprint{display:none!important}
+  main{padding:0;max-width:none}
+  body{font-size:10.5pt}
+  table{font-size:8.5pt}
+  .wrap{overflow:visible}
+  a{text-decoration:none}
+  tr,dl.kv,.call,.sig{break-inside:avoid}
+  h2{break-after:avoid}
+  .foot{position:fixed;bottom:0;left:0;right:0;border-top:1px solid #000;background:#fff;font-weight:700;text-align:center;font-size:8pt;color:#000}
+  @page{margin:14mm 12mm 16mm}
+}
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="bar-in">
+    <h1>Draft RSRA for a Minnesota property</h1>
+    <p>Address in, a draft SBA Records Search with Risk Assessment out: every government list 40 CFR 312.26 names, searched at its distance, plus the historical record back past 1940. Your Environmental Professional reviews it, makes the call and signs.</p>
+    <form id="f">
+      <input type="text" id="q" name="address" placeholder="Street address, city, MN" autocomplete="street-address" required>
+      <button type="submit">Search records</button>
+    </form>
+    <div class="try">Try: <a href="?address=2125+Hennepin+Ave+E%2C+Minneapolis%2C+MN">2125 Hennepin Ave E</a><a href="?address=701+Nicollet+Mall%2C+Minneapolis%2C+MN">701 Nicollet Mall</a><a href="?address=4301+Upton+Ave+S%2C+Minneapolis%2C+MN">4301 Upton Ave S</a></div>
+  </div>
+</header>
+<main id="out"></main>
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const out = $("#out");
+const fmtMi = (m) => m === 0 ? "On subject" : `${m.toFixed(3)} mi <span class="meta">(${Math.round(m * 5280).toLocaleString()} ft)</span>`;
+const fmtDist = (l) => l.miles === 0 ? "Subject property" : l.miles === 0.125 && (l.cfr_miles === "adjoining" || l.astm_miles === "adjoining") ? "Adjoining (1/8 mi)" : `${l.miles} mi`;
+const BANDS = [[0, 0, "Subject"], [0, 0.125, "≤1/8"], [0.125, 0.25, "1/8–1/4"], [0.25, 0.5, "1/4–1/2"], [0.5, 1, "1/2–1"]];
+const inBand = (m, [lo, hi]) => hi === 0 ? m === 0 : m > lo && m <= hi + 1e-9;
+
+function params() { return new URLSearchParams(location.search); }
+
+async function run() {
+  const p = params();
+  const address = p.get("address");
+  if (!address) { out.innerHTML = ""; return; }
+  $("#q").value = address;
+  out.innerHTML = `<p class="status">Searching EPA, MPCA, the county parcel record, USGS and the Library of Congress…</p>`;
+  const t0 = performance.now();
+  let r;
+  try {
+    const res = await fetch(`/api/rsra?${p.toString()}`);
+    r = await res.json();
+  } catch (e) { out.innerHTML = `<p class="err">The search did not complete: ${esc(e.message)}</p>`; return; }
+  if (r.error) { out.innerHTML = `<p class="err">${esc(r.error)}</p>`; return; }
+  if (r.choose) return choose(address, r.choose);
+  render(r, Math.round(performance.now() - t0));
+}
+
+function choose(address, c) {
+  const link = (extra) => `?${new URLSearchParams({ address, ...extra })}`;
+  out.innerHTML = `<div class="choose"><h2>Which parcel is the subject?</h2>
+  <p>The county parcel file has no parcel with the address <b>${esc(c.matched)}</b>, and the geocoded point falls in the street. These are the parcels within 300 feet of it, nearest first.</p>
+  <ul>${c.candidates.map((x) => `<li><a href="${link({ pin: x.pin })}"><b>${esc(x.address)}</b></a> · ${esc(x.owner || "")} · ${esc(x.use || "")} · ${x.feet} ft · PIN ${esc(x.pin)}</li>`).join("")}</ul>
+  <p><a href="${link({ point: "1" })}">None of these; measure from the address point instead</a></p></div>`;
+}
+
+function render(r, ms) {
+  const s = r.subject, P = s.parcel;
+  const byKey = Object.fromEntries(r.findings.map((f) => [f.key, f]));
+  const listName = Object.fromEntries(r.lists.map((l) => [l.id, l.name]));
+  const covered = r.lists.filter((l) => l.covered && !l.failed), missing = r.lists.filter((l) => !l.covered || l.failed);
+  const gen = new Date(r.generated);
+  const rows = r.lists.map((l) => {
+    const mine = r.findings.filter((f) => f.list === l.id);
+    const cells = BANDS.map((b) => b[1] <= l.miles || (b[1] === 0) ? `<td class="n">${mine.filter((f) => inBand(f.miles, b)).length}</td>` : `<td class="n meta">–</td>`).join("");
+    if (!l.covered || l.failed) return `<tr class="miss"><td>${esc(l.name)}<div class="meta">${l.failed ? "Source did not answer for this report." : esc(l.source)}</div></td><td>${esc(l.level)}</td><td class="k">${esc(l.cfr)}</td><td>${fmtDist(l)}</td><td colspan="7"><b>Not searched</b></td></tr>`;
+    return `<tr><td>${esc(l.name)}<div class="meta">${esc(l.source)}</div></td><td>${esc(l.level)}</td><td class="k">${esc(l.cfr)}</td><td>${fmtDist(l)}</td>${cells}<td class="n"><b>${l.count}</b></td><td class="n">${l.open || 0}</td></tr>`;
+  }).join("");
+
+  const groups = r.lists.filter((l) => l.count).map((l) => {
+    const mine = r.findings.filter((f) => f.list === l.id);
+    return `<h3>${esc(l.name)} <span class="meta">· ${mine.length} within ${fmtDist(l)}</span></h3><div class="wrap"><table><thead><tr><th>Ref</th><th>Name</th><th>Address on file</th><th class="n">Distance</th><th>Status</th><th>Detail</th><th>Record</th></tr></thead><tbody>${
+      mine.map((f) => `<tr><td class="k">${f.key}</td><td>${esc(f.name)}</td><td>${esc(f.address)}</td><td class="n">${fmtMi(f.miles)}</td><td><span class="pill ${f.open ? "open" : ""}">${esc(f.status)}</span>${f.opened || f.closed ? `<div class="meta">${f.opened ? "opened " + esc(f.opened) : ""}${f.closed ? (f.opened ? ", " : "") + "closed " + esc(f.closed) : ""}</div>` : ""}</td><td>${esc(f.detail)}<div class="meta">${esc(f.ids || "")}${f.located_by ? " · located by " + esc(f.located_by) : ""}</div></td><td><a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.source)}</a></td></tr>`).join("")
+    }</tbody></table></div>`;
+  }).join("");
+
+  // Sanborn volumes collapse to one row; every other source keeps its own row.
+  const tl = r.historical.timeline;
+  const san = tl.filter((t) => t.kind.startsWith("Sanborn"));
+  const rest = tl.filter((t) => !t.kind.startsWith("Sanborn"));
+  const sanRow = san.length ? [{ year: san[0].year, kind: "Sanborn fire insurance maps", detail: `${san.length} editions for ${s.city}: ${san.map((t) => `<a href="${esc(t.url)}" target="_blank" rel="noopener">${t.year}</a>`).join(", ")}. Find the subject block on each edition's index sheet.`, html: true, source: "Library of Congress", url: "https://www.loc.gov/collections/sanborn-maps/" }] : [];
+  const tlRows = [...sanRow, ...rest].sort((a, b) => (a.year ?? 9999) - (b.year ?? 9999)).map((t) => `<tr><td class="n">${t.year ?? "Undated"}</td><td>${esc(t.kind)}</td><td>${t.html ? t.detail : esc(t.detail)}</td><td>${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener">${esc(t.source)}</a>` : esc(t.source)}</td></tr>`).join("");
+
+  const rules = r.risk.rules.map((x) => `<tr><td class="k">${x.id}</td><td>${esc(x.text)}</td><td class="${x.rows.length ? "fired" : ""}">${x.rows.length ? `Fired on ${x.rows.length}` : "Did not fire"}</td><td>${x.rows.slice(0, 12).map((k) => `<span class="k">${k}</span> ${esc(byKey[k].name)} <span class="meta">(${esc(listName[byKey[k].list])}, ${byKey[k].miles === 0 ? "on subject" : byKey[k].miles.toFixed(3) + " mi"})</span>`).join("<br>")}${x.rows.length > 12 ? `<br><span class="meta">and ${x.rows.length - 12} more in section 3</span>` : ""}</td></tr>`).join("");
+
+  out.innerHTML = `
+  <div class="actions"><button onclick="window.print()">Print or save as PDF</button><button class="ghost" onclick="navigator.clipboard&&navigator.clipboard.writeText(location.href)">Copy link</button></div>
+  <article class="doc">
+    <div class="stamp">DRAFT FOR ENVIRONMENTAL PROFESSIONAL REVIEW</div>
+    <div class="title"><h1>Records Search with Risk Assessment</h1><span class="meta">Records searched ${gen.toLocaleString("en-US", { dateStyle: "long", timeStyle: "short" })}</span></div>
+    <p class="meta">Prepared under SBA SOP 50 10 8 and Procedural Notice 5000-866054 for an SBA loan over $250,000. Government records searched per 40 CFR 312.26 at the larger of the CFR and ASTM E1527-21 search distances.</p>
+
+    <h2>1. Subject property</h2>
+    <dl class="kv">
+      <dt>Address as entered</dt><dd>${esc(s.input)}</dd>
+      <dt>Geocoded address</dt><dd>${esc(s.matched)} <span class="meta">(U.S. Census geocoder)</span></dd>
+      ${P ? `<dt>County parcel</dt><dd>${esc(P.address)} · PIN ${esc(P.pin)}</dd>
+      <dt>Parcel matched by</dt><dd>${esc(P.match)}</dd>
+      <dt>Owner of record</dt><dd>${esc(P.owner || "Not recorded")}</dd>
+      <dt>Use class</dt><dd>${esc(P.use || "Not recorded")}</dd>
+      <dt>Current building built</dt><dd>${P.year_built || "Not recorded"}</dd>
+      <dt>Parcel area</dt><dd>${P.acres != null ? P.acres + " acres" : "Not recorded"}</dd>
+      <dt>Legal description (abbrev.)</dt><dd>${esc(P.legal || "Not recorded")}</dd>
+      <dt>Parcel source</dt><dd><a href="${esc(P.source_url)}" target="_blank" rel="noopener">${esc(P.source)}</a></dd>` : `<dt>County parcel</dt><dd>${esc(s.parcel_note)}</dd>`}
+      <dt>County</dt><dd>${esc(s.county || "")}</dd>
+      <dt>Coordinates</dt><dd>${s.lat.toFixed(6)}, ${s.lon.toFixed(6)} ${P ? '<span class="meta">(parcel centroid)</span>' : ""}</dd>
+      <dt>Distances measured from</dt><dd>${s.has_boundary ? "The subject parcel boundary, per 40 CFR 312.26(d)" : "The geocoded address point (no parcel boundary)"}</dd>
+    </dl>
+
+    <h2>2. Suggested risk call</h2>
+    <div class="call"><span>Suggested by rule:</span><b class="${r.risk.suggestion.split(" ")[0]}">${esc(r.risk.suggestion)}</b><span class="meta">${esc(r.risk.basis)} The conclusion in section 5 is the Environmental Professional's.</span></div>
+    <div class="wrap"><table style="margin-top:8px"><thead><tr><th>Rule</th><th>A High Risk suggestion when</th><th>Result</th><th>Records it fired on</th></tr></thead><tbody>${rules}</tbody></table></div>
+
+    <h2>3. Government records searched</h2>
+    <p class="meta">${covered.length} of ${r.lists.length} lists searched. Counts by distance from the subject; "–" is beyond that list's search distance. Open = an active file.</p>
+    <div class="wrap"><table><thead><tr><th>List</th><th>Level</th><th>40 CFR</th><th>Searched to</th>${BANDS.map((b) => `<th class="n">${b[2]}</th>`).join("")}<th class="n">Total</th><th class="n">Open</th></tr></thead><tbody>${rows}</tbody></table></div>
+    ${groups || "<p>No record on any searched list falls within its search distance.</p>"}
+    ${r.sems_unplaced.length ? `<h3>Unmapped federal SEMS records in ${esc(s.city)}</h3><p class="meta">These ${r.sems_unplaced.length} SEMS records list this city but carry no coordinate EPA or the Census geocoder could place. Check each address against the subject.</p><div class="wrap"><table><thead><tr><th>Name</th><th>Address on file</th><th>List</th><th>Record</th></tr></thead><tbody>${r.sems_unplaced.map((u) => `<tr><td>${esc(u.name)}</td><td>${esc(u.address)}</td><td>${esc(listName[u.list])}</td><td><a href="${esc(u.url)}" target="_blank" rel="noopener">${esc(u.epa_id)}</a></td></tr>`).join("")}</tbody></table></div>` : ""}
+
+    <h2>4. Historical use</h2>
+    <p class="meta">SBA requires historical use records back to 1940 or first developed use. Sources found for this location reach back to ${r.historical.earliest_year ?? "no dated source"}${r.historical.reaches_1940 ? ", before 1940" : ""}.</p>
+    <div class="wrap"><table><thead><tr><th class="n">Year</th><th>Source</th><th>What it holds for this property</th><th>Link</th></tr></thead><tbody>${tlRows}</tbody></table></div>
+    <h3>For the reviewer to read and record</h3>
+    <div class="wrap"><table><thead><tr><th>Source</th><th>Where</th><th style="width:45%">Uses observed, by year</th></tr></thead><tbody>
+      ${[{ kind: "USGS topographic maps above", source: "Linked in the table", url: "" }, { kind: "Sanborn maps above", source: "Linked in the table", url: "" }, ...r.historical.to_review].map((t) => `<tr><td>${esc(t.kind)}</td><td>${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener">${esc(t.source)}</a>` : esc(t.source)}</td><td><div class="line" contenteditable="true" data-ph="Enter findings"></div></td></tr>`).join("")}
+    </tbody></table></div>
+
+    <h2>5. Environmental Professional</h2>
+    <p>I declare that, to the best of my professional knowledge and belief, I meet the definition of Environmental Professional as defined in 40 CFR 312.10(b), and I have reviewed the records search above.</p>
+    <p><span class="box"></span>Low risk &nbsp;&nbsp;&nbsp; <span class="box"></span>High risk</p>
+    <div class="sig">
+      <div><div class="line" contenteditable="true" data-ph="Name"></div><div class="lab">Environmental Professional</div></div>
+      <div><div class="line" contenteditable="true" data-ph="Firm"></div><div class="lab">Firm</div></div>
+      <div><div class="line" contenteditable="true" data-ph="Credentials"></div><div class="lab">Qualifications under 40 CFR 312.10(b)</div></div>
+      <div><div class="line" contenteditable="true" data-ph="Date"></div><div class="lab">Date</div></div>
+      <div><div class="line"></div><div class="lab">Signature</div></div>
+      <div><div class="line" contenteditable="true" data-ph="Rationale for any changed search distance, 312.26(d)"></div><div class="lab">Search distance changes and rationale</div></div>
+    </div>
+
+    <h2>6. Method and sources</h2>
+    <ul class="meta">
+      <li>Search distance per list = the larger of 40 CFR 312.26(c) and ASTM E1527-21 Table 1. "Adjoining" is searched to ${r.adjoining_miles} mile of the parcel boundary, which reaches across a public street. Lists the CFR applies to the subject property alone are searched on the subject parcel.</li>
+      <li>${esc(r.citations.cfr)}</li><li>${esc(r.citations.astm)}</li><li>${esc(r.citations.sba)}</li>
+      <li>Federal SEMS list cached from EPA Envirofacts on ${esc(r.sems_built_on)}; every other register was queried live when this report was generated.</li>
+      <li>Register coordinates are the agency's own, mostly address-matched; the "located by" line on each record says how.</li>
+      ${missing.length ? `<li>Not searched: ${missing.map((l) => esc(l.name)).join("; ")}.</li>` : ""}
+      ${r.errors.length ? `<li class="err">Sources that did not answer: ${r.errors.map(esc).join("; ")}</li>` : ""}
+      <li>Built in ${(r.elapsed_ms / 1000).toFixed(1)} s. Source code: <a href="https://github.com/2016judea/rsra-draft">github.com/2016judea/rsra-draft</a></li>
+    </ul>
+    <div class="foot">DRAFT FOR ENVIRONMENTAL PROFESSIONAL REVIEW · ${esc(P ? P.address : s.matched)} · searched ${gen.toISOString().slice(0, 10)}</div>
+  </article>`;
+  document.title = `RSRA Draft · ${P ? P.address : s.matched}`;
+}
+
+$("#f").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const a = $("#q").value.trim();
+  if (!a) return;
+  history.pushState(null, "", `?${new URLSearchParams({ address: a })}`);
+  run();
+});
+window.addEventListener("popstate", run);
+run();
+</script>
+</body>
+</html>

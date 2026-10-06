@@ -1,0 +1,3 @@
+{
+  "functions": { "api/rsra.js": { "includeFiles": "data/**", "maxDuration": 60 } }
+}
