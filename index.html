@@ -111,7 +111,8 @@ async function run() {
   const t0 = performance.now();
   let r;
   try {
-    const res = await fetch(`/api/rsra?${p.toString()}`);
+    // the example is a static snapshot (scripts/build_example.mjs); only a visitor's own address runs live
+    const res = await fetch(example ? "/example.json" : `/api/rsra?${p.toString()}`);
     r = await res.json();
   } catch (e) { out.innerHTML = `<p class="err">The search did not complete: ${esc(e.message)}</p>`; return; }
   if (r.error) { out.innerHTML = `<p class="err">${esc(r.error)}</p>`; return; }

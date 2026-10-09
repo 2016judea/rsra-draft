@@ -32,6 +32,7 @@ All sources are free and keyless. No data is stored.
 
     node --test test/*.test.js      # unit tests
     python3 scripts/build_sems.py   # refresh the SEMS cache
+    node scripts/build_example.mjs  # refresh the example report the page opens on
 
 Deployed on Vercel: `index.html` plus one function, `api/rsra.js`.
 
