@@ -1,8 +1,12 @@
-# rsra-draft
+# RSRA Draft Tool
 
 **Live:** https://rsra-draft.vercel.app
 
-Type a Minnesota property address, get a **draft Records Search with Risk Assessment (RSRA)**: the desk-only environmental report SBA requires on 7(a) and 504 loans over $250,000 (SOP 50 10 8, Procedural Notice 5000-866054).
+Drafts a Records Search with Risk Assessment (RSRA) for any property in MSP. That’s the desk-only environmental report the SBA requires on 7(a) and 504 loans over $250,000.
+
+*(Aidan, [Business Prototypes](https://randomaidan.substack.com/p/business-prototypes), 2026-10-12.)*
+
+Type an address in the seven-county Minneapolis–Saint Paul metro, get a **draft RSRA** (SOP 50 10 8, Procedural Notice 5000-866054).
 
 The draft is built for an Environmental Professional (40 CFR 312.10(b)) to review, make the low/high-risk call and sign. It does the records half of the job:
 

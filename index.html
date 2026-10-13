@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RSRA Draft</title>
-<meta name="description" content="Type a Minnesota address, get a draft SBA Records Search with Risk Assessment for an Environmental Professional to review and sign.">
+<title>RSRA Draft Tool</title>
+<meta name="description" content="RSRA Draft Tool. Drafts a Records Search with Risk Assessment (RSRA) for any property in MSP. That’s the desk-only environmental report the SBA requires on 7(a) and 504 loans over $250,000.">
 <style>
 :root{--ink:#16181d;--mute:#5d636e;--line:#d9dce2;--soft:#f3f4f6;--bg:#fff;--accent:#7a2e1f;--hi:#b3261e;--lo:#1e6b3a;--stamp:#b3261e}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ink:#e8e9ec;--mute:#a1a6b0;--line:#3a3e46;--soft:#22252b;--bg:#15171b;--accent:#e39a85;--hi:#ff8a80;--lo:#7fd39b;--stamp:#ff8a80}}
@@ -94,7 +94,7 @@ if(me){posthog.opt_out_capturing();}else{if(p==="0")posthog.opt_in_capturing();p
 <body>
 <header class="bar">
   <div class="bar-in">
-    <h1>Draft RSRA for a Minnesota property</h1>
+    <h1>Draft RSRA for any property in MSP</h1>
     <p>Address in, a draft SBA Records Search with Risk Assessment out: every government list 40 CFR 312.26 names, searched at its distance, plus the historical record back past 1940. Your Environmental Professional reviews it, makes the call and signs.</p>
     <form id="f">
       <input type="text" id="q" name="address" placeholder="Street address, city, MN" autocomplete="street-address" required>
@@ -134,7 +134,7 @@ async function run() {
   if (r.error) { out.innerHTML = `<p class="err">${esc(r.error)}</p>`; return; }
   if (r.choose) return choose(address, r.choose);
   render(r, Math.round(performance.now() - t0));
-  if (example) out.insertAdjacentHTML("afterbegin", `<p class="status example">Example report for ${esc(EXAMPLE.replace(", MN", ""))}. Type any Minnesota address above to run your own.</p>`);
+  if (example) out.insertAdjacentHTML("afterbegin", `<p class="status example">Example report for ${esc(EXAMPLE.replace(", MN", ""))}. Type any MSP address above to run your own.</p>`);
 }
 
 function choose(address, c) {

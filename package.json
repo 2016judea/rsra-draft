@@ -1,2 +1,3 @@
-{ "name": "rsra-draft", "version": "0.1.0", "private": true, "type": "module", "license": "MIT",
+{ "name": "rsra-draft", "version": "0.1.0", "private": true,
+  "description": "RSRA Draft Tool. Drafts a Records Search with Risk Assessment (RSRA) for any property in MSP. That’s the desk-only environmental report the SBA requires on 7(a) and 504 loans over $250,000.", "type": "module", "license": "MIT",
   "scripts": { "test": "node --test test/*.test.js" } }
