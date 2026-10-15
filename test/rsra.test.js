@@ -45,3 +45,11 @@ test("risk rules: on-subject leak is high; a closed leak nearby is not", () => {
   assert.equal(riskCall([{ key: "F1", list: "state_hw_gen", miles: 0, open: true, detail: "Hazardous Waste, Small quantity generator" }]).suggestion, "High risk");
   assert.equal(riskCall([{ key: "F1", list: "rcra_gen", miles: 0.1, open: true }]).suggestion, "Low risk");
 });
+
+import { isRow } from "../api/_lib/rsra.js";
+test("a right-of-way polygon is never the subject parcel", () => {
+  assert.ok(isRow({ COUNTY_PIN: "County RoW" }));
+  assert.ok(isRow({ COUNTY_PIN: "ROW" }));
+  assert.ok(!isRow({ COUNTY_PIN: "1802923340065" }));
+  assert.ok(!isRow({ COUNTY_PIN: "R12.345.678" }));
+});

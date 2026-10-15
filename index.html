@@ -56,6 +56,28 @@ tr.miss td{color:var(--mute)}
 .lab{font-size:12px;color:var(--mute);margin-top:3px}
 .box{display:inline-block;width:14px;height:14px;border:1.5px solid var(--ink);vertical-align:-2px;margin-right:6px}
 .actions{display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap}
+.sum{border:1px solid var(--line);border-radius:8px;padding:14px;margin:0 0 18px;background:var(--soft)}
+.sum .row1{display:flex;gap:10px 18px;flex-wrap:wrap;align-items:baseline}
+.sum b.v{font-size:22px}
+.sum .High{color:var(--hi)}.sum .Low{color:var(--lo)}
+.sum ul{margin:8px 0 0;padding-left:18px}
+.buy{border:2px solid var(--ink);border-radius:8px;padding:16px 14px;margin:22px 0}
+.buy h2{border:0!important;margin:0 0 6px!important;padding:0!important;font-size:18px!important}
+.buy p{margin:6px 0}
+.buy .price{font-size:17px;font-weight:700}
+.buy .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.buy button{min-height:46px}
+.pwf{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.pwf input{flex:1 1 200px;min-width:0;font:500 16px ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;padding:11px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+.pwerr{flex-basis:100%;margin:2px 0 0;color:var(--hi);font-size:14px;min-height:1.2em}
+#checkout{margin-top:12px}
+.locked h2{color:var(--mute);border-bottom-color:var(--line)!important}
+.locked li{margin:4px 0}
+.for{border-left:4px solid var(--accent);padding:10px 14px;margin:0 0 16px;background:var(--soft)}
+.for p{margin:4px 0}
+.for .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.for .tabs button{font-size:14px;padding:8px 10px;min-height:40px;background:transparent;color:var(--ink);border-color:var(--line);text-align:left}
+.for .tabs button[aria-current="true"]{border-color:var(--ink);font-weight:600}
 .foot{position:static;font-size:11px;color:var(--mute);margin-top:30px;border-top:1px solid var(--line);padding-top:6px}
 @media (max-width:640px){dl.kv{grid-template-columns:1fr}dl.kv dt{margin-top:6px}.sig{grid-template-columns:1fr}.title h1{font-size:20px}}
 @media print{
@@ -113,28 +135,58 @@ const fmtDist = (l) => l.miles === 0 ? "Subject property" : l.miles === 0.125 &&
 const BANDS = [[0, 0, "Subject"], [0, 0.125, "≤1/8"], [0.125, 0.25, "1/8–1/4"], [0.25, 0.5, "1/4–1/2"], [0.5, 1, "1/2–1"]];
 const inBand = (m, [lo, hi]) => hi === 0 ? m === 0 : m > lo && m <= hi + 1e-9;
 
+// Paywall (README "## The paywall"). One property's full draft, PRICE once.
+const PRICE = 40;
+const PK = "pk_live_51TUvvcBzD4mN8eOD28H6oQkFwFHwF1SLtWxN1vHRmnSxntWFefgd33mEIVmjv8ekxWgkZft3OpPlzmVXMIeHPBwj003998hjTf";
+const FOR = window.FOR || null; // set on /for/<token>/ pages
+function track(name, data = {}) {
+  const d = { ...data, ...(FOR ? { for: FOR.token } : {}) };
+  try { window.va && window.va("event", { name, data: d }); } catch (e) {}
+  try { window.posthog && window.posthog.capture && window.posthog.capture(name, d); } catch (e) {}
+}
+const PWS = { get(k) { try { return JSON.parse(localStorage.getItem("rsra_pw") || "{}")[k] || null; } catch (e) { return null; } },
+  set(k, v) { try { const m = JSON.parse(localStorage.getItem("rsra_pw") || "{}"); if (v) m[k] = v; else delete m[k]; localStorage.setItem("rsra_pw", JSON.stringify(m)); } catch (e) {} } };
+
 const EXAMPLE = "2125 Hennepin Ave E, Minneapolis, MN";
 function params() { return new URLSearchParams(location.search); }
+const apiUrl = (p, pw) => { const q = new URLSearchParams(p); q.delete("paid"); q.delete("pw"); if (pw) q.set("pw", pw); return `/api/rsra?${q}`; };
 
+let CUR = null; // the report on screen: { r, p }
 async function run() {
   const p = params();
+  const paidq = p.get("paid"), pwq = p.get("pw");
+  if (pwq || paidq) { const c = new URLSearchParams(p); c.delete("pw"); c.delete("paid"); history.replaceState(null, "", location.pathname + (c.toString() ? "?" + c : "")); }
+  if (FOR && !p.get("address")) return showFor(0);
   // open on a worked example, never a blank page; the visitor's own address replaces it
   const example = !p.get("address");
   if (example) p.set("address", EXAMPLE);
   const address = p.get("address");
   $("#q").value = address;
   out.innerHTML = `<p class="status">Searching EPA, MPCA, the county parcel record, USGS and the Library of Congress…</p>`;
-  const t0 = performance.now();
   let r;
   try {
-    // the example is a static snapshot (scripts/build_example.mjs); only a visitor's own address runs live
-    const res = await fetch(example ? "/example.json" : `/api/rsra?${p.toString()}`);
-    r = await res.json();
+    // the example is a static snapshot of the free slice (scripts/build_example.mjs); an address runs live
+    r = await (await fetch(example && !pwq ? "/example.json" : apiUrl(p, pwq))).json();
+    if (!r.error && !r.choose && r.free && !pwq) {
+      const saved = PWS.get(r.key);
+      if (saved) {
+        out.insertAdjacentHTML("afterbegin", `<p class="status">Opening your full draft…</p>`);
+        const full = await (await fetch(apiUrl(p, saved))).json();
+        if (full && full.free === false) { r = full; track("unlock", { via: "saved" }); } else PWS.set(r.key, null);
+      }
+    }
   } catch (e) { out.innerHTML = `<p class="err">The search did not complete: ${esc(e.message)}</p>`; return; }
   if (r.error) { out.innerHTML = `<p class="err">${esc(r.error)}</p>`; return; }
   if (r.choose) return choose(address, r.choose);
-  render(r, Math.round(performance.now() - t0));
-  if (example) out.insertAdjacentHTML("afterbegin", `<p class="status example">Example report for ${esc(EXAMPLE.replace(", MN", ""))}. Type any MSP address above to run your own.</p>`);
+  CUR = { r, p };
+  if (r.free === false) {
+    if (pwq) { PWS.set(r.key, pwq); track("unlock", { via: "link" }); }
+    render(r);
+  } else {
+    renderFree(r, { example });
+    if (r.pw_error) { openPw(); $("#pwf input").value = pwq || ""; $("#pwf .pwerr").textContent = r.pw_error; }
+  }
+  if (paidq) confirmPaid(paidq);
 }
 
 function choose(address, c) {
@@ -143,6 +195,149 @@ function choose(address, c) {
   <p>The county parcel file has no parcel with the address <b>${esc(c.matched)}</b>, and the geocoded point falls in the street. These are the parcels within 300 feet of it, nearest first.</p>
   <ul>${c.candidates.map((x) => `<li><a href="${link({ pin: x.pin })}"><b>${esc(x.address)}</b></a> · ${esc(x.owner || "")} · ${esc(x.use || "")} · ${x.feet} ft · PIN ${esc(x.pin)}</li>`).join("")}</ul>
   <p><a href="${link({ point: "1" })}">None of these; measure from the address point instead</a></p></div>`;
+}
+
+function subjectDl(s) {
+  const P = s.parcel;
+  return `<dl class="kv">
+      <dt>Address as entered</dt><dd>${esc(s.input)}</dd>
+      <dt>Geocoded address</dt><dd>${esc(s.matched)} <span class="meta">(U.S. Census geocoder)</span></dd>
+      ${P ? `<dt>County parcel</dt><dd>${esc(P.address)} · PIN ${esc(P.pin)}</dd>
+      <dt>Owner of record</dt><dd>${esc(P.owner || "Not recorded")}</dd>
+      <dt>Use class</dt><dd>${esc(P.use || "Not recorded")}</dd>
+      <dt>Current building built</dt><dd>${P.year_built || "Not recorded"}</dd>
+      <dt>Parcel area</dt><dd>${P.acres != null ? P.acres + " acres" : "Not recorded"}</dd>` : `<dt>County parcel</dt><dd>${esc(s.parcel_note)}</dd>`}
+      <dt>County</dt><dd>${esc(s.county || "")}</dd>
+    </dl>`;
+}
+
+function label(r) { const P = r.subject.parcel; return P ? P.address : r.subject.matched; }
+
+function renderFree(r, { example } = {}) {
+  const s = r.subject, T = r.totals, H = r.historical;
+  const gen = new Date(r.generated);
+  const fired = r.risk.rules.filter((x) => x.n);
+  const covered = r.lists.filter((l) => l.covered && !l.failed);
+  const rows = r.lists.map((l) => {
+    if (!l.covered || l.failed) return `<tr class="miss"><td>${esc(l.name)}<div class="meta">${l.failed ? "Source did not answer for this report." : esc(l.source)}</div></td><td>${fmtDist(l)}</td><td colspan="6"><b>Not searched</b></td></tr>`;
+    const cells = BANDS.map((b, i) => b[1] <= l.miles || b[1] === 0 ? `<td class="n">${l.bands[i]}</td>` : `<td class="n meta">–</td>`).join("");
+    return `<tr><td>${esc(l.name)}<div class="meta">${esc(l.source)}</div></td><td>${fmtDist(l)}</td>${cells}<td class="n"><b>${l.count}</b></td></tr>`;
+  }).join("");
+  out.innerHTML = `
+  ${example ? `<p class="status example">Example: ${esc(EXAMPLE.replace(", MN", ""))}. Type any MSP address above to run your own.</p>` : ""}
+  ${FOR ? forBox() : ""}
+  <div class="sum" aria-live="polite">
+    <div class="row1"><span>Suggested call for <b>${esc(label(r))}</b>:</span><b class="v ${r.risk.suggestion.split(" ")[0]}">${esc(r.risk.suggestion)}</b></div>
+    <ul>
+      <li>${fired.length ? `${fired.length} of ${r.risk.rules.length} rules fired (${fired.map((x) => `${x.id} on ${x.n}`).join(", ")}).` : `None of the ${r.risk.rules.length} rules fired.`}</li>
+      <li>${T.findings.toLocaleString()} government records within search distance${T.on_subject ? `, ${T.on_subject} of them on the parcel itself` : ""}${T.open ? `, ${T.open} still open` : ""}.</li>
+      <li>Historical record back to ${H.earliest_year ?? "no dated source"}${H.reaches_1940 ? " (before 1940, as SBA requires)" : ""}: ${H.topos} USGS topo editions, ${H.sanborn} Sanborn editions.</li>
+    </ul>
+  </div>
+  ${buyBox(r)}
+  <article class="doc">
+    <div class="stamp">DRAFT FOR ENVIRONMENTAL PROFESSIONAL REVIEW</div>
+    <div class="title"><h1>Records Search with Risk Assessment</h1><span class="meta">Records searched ${gen.toLocaleString("en-US", { dateStyle: "long", timeStyle: "short" })}</span></div>
+    <h2>1. Subject property</h2>
+    ${subjectDl(s)}
+    <h2>2. Suggested risk call</h2>
+    <div class="wrap"><table><thead><tr><th>Rule</th><th>A High Risk suggestion when</th><th>Result</th></tr></thead><tbody>${r.risk.rules.map((x) => `<tr><td class="k">${x.id}</td><td>${esc(x.text)}</td><td class="${x.n ? "fired" : ""}">${x.n ? `Fired on ${x.n}` : "Did not fire"}</td></tr>`).join("")}</tbody></table></div>
+    <h2>3. Government records searched</h2>
+    <p class="meta">${covered.length} of ${r.lists.length} lists searched. Records by distance from the parcel; "–" is beyond that list's search distance.</p>
+    <div class="wrap"><table><thead><tr><th>List</th><th>Searched to</th>${BANDS.map((b) => `<th class="n">${b[2]}</th>`).join("")}<th class="n">Total</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="locked">
+      <h2>In the full draft</h2>
+      <ul>
+        <li>All ${T.findings.toLocaleString()} records by name, address on file, distance in feet, open or closed with dates, and a link to the agency's own record.</li>
+        <li>Which records each rule fired on, so the reviewer can check the call row by row.</li>
+        <li>The historical-use table: ${H.sources} dated sources for this location, plus aerials and city directories to record.</li>
+        <li>The Environmental Professional's declaration and signature page, and the method and citations.</li>
+        <li>Prints clean to PDF, every page stamped as a draft.</li>
+      </ul>
+    </div>
+  </article>`;
+  wirePay(r);
+  document.title = `RSRA Draft · ${label(r)}`;
+  track("preview_open", { example: !!example, key: r.key, call: r.risk.suggestion });
+}
+
+function buyBox(r) {
+  return `<section class="buy" id="buy">
+    <h2>The full draft for ${esc(label(r))}</h2>
+    <p>Every record behind the call above, the historical record, and the signature page, ready to print for your Environmental Professional.</p>
+    <p class="price">$${PRICE} for this property, once.</p>
+    <div class="btns"><button type="button" id="buyBtn">Buy the full draft</button><button type="button" class="ghost" id="havepw" aria-expanded="false">Have a password?</button></div>
+    <form class="pwf" id="pwf" hidden><label class="meta" for="pw1" style="flex-basis:100%">Password from your email</label><input id="pw1" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX"><button>Open</button><p class="pwerr" role="alert"></p></form>
+    <div id="paidMsg" hidden></div>
+    <div id="checkout"></div>
+  </section>`;
+}
+
+const loadStripe = () => window.Stripe ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = "https://js.stripe.com/dahlia/stripe.js"; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+let CO = null;
+function openPw() { const f = $("#pwf"); if (!f) return; f.hidden = false; $("#havepw").setAttribute("aria-expanded", "true"); }
+function wirePay(r) {
+  if (CO) { try { CO.destroy(); } catch (e) {} CO = null; }
+  $("#havepw").onclick = () => { const f = $("#pwf"), on = f.hidden; f.hidden = !on; $("#havepw").setAttribute("aria-expanded", on); if (on) f.querySelector("input").focus(); };
+  $("#pwf").onsubmit = async (e) => {
+    e.preventDefault();
+    const v = $("#pw1").value.trim(), err = $("#pwf .pwerr"), b = $("#pwf button");
+    if (!v) { err.textContent = "Enter the password from your email."; return; }
+    b.disabled = true; err.textContent = "Checking…";
+    try {
+      const full = await (await fetch(apiUrl(CUR.p, v) + `&k=${encodeURIComponent(CUR.r.key || "")}`)).json();
+      if (full.free === false) { PWS.set(full.key, v); track("unlock", { via: "form" }); CUR.r = full; render(full); scrollTo({ top: 0 }); }
+      else err.textContent = full.pw_error || full.error || "That password didn't match.";
+    } catch (x) { err.textContent = "Couldn't check the password. Try again in a minute."; }
+    finally { b.disabled = false; }
+  };
+  $("#buyBtn").onclick = async () => {
+    const b = $("#buyBtn");
+    track("checkout_open", { key: r.key });
+    if (CO) { $("#checkout").scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+    b.disabled = true; const t = b.textContent; b.textContent = "Loading secure checkout…";
+    try {
+      await loadStripe(); const st = Stripe(PK);
+      const body = JSON.stringify({ address: CUR.p.get("address") || EXAMPLE, pin: CUR.p.get("pin") || r.subject.parcel?.pin || "", key: r.key, label: label(r) });
+      const opts = { fetchClientSecret: () => fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body }).then((x) => x.json()).then((j) => { if (!j.clientSecret) throw new Error(j.error || "Checkout could not start."); return j.clientSecret; }) };
+      CO = await (st.createEmbeddedCheckoutPage ? st.createEmbeddedCheckoutPage(opts) : st.initEmbeddedCheckout(opts));
+      CO.mount("#checkout"); setTimeout(() => $("#checkout").scrollIntoView({ behavior: "smooth", block: "start" }), 300);
+    } catch (x) { CO = null; openPw(); $("#pwf .pwerr").textContent = "Checkout didn't load. Refresh and try again, or email aidan@brickandmortar.dev."; }
+    finally { b.disabled = false; b.textContent = t; }
+  };
+}
+
+// Back from Stripe: ?paid=<session>. The page never shows the password; the email carries it.
+async function confirmPaid(id) {
+  const m = $("#paidMsg"); if (!m) return;
+  m.hidden = false; m.innerHTML = `<p><b>Confirming your payment…</b></p>`;
+  $("#buy").scrollIntoView({ block: "start" });
+  for (let i = 0; i < 6; i++) {
+    try {
+      const j = await (await fetch(`/api/session-status?session_id=${encodeURIComponent(id)}`)).json();
+      if (j.paid) {
+        m.innerHTML = `<p><b>Paid. Check your email for the password and a link to the full draft.</b>${j.email ? ` Sent to ${esc(j.email)}.` : ""} Enter it here once it lands:</p>`;
+        openPw(); track("paid", { key: CUR?.r?.key }); return;
+      }
+    } catch (e) {}
+    await new Promise((ok) => setTimeout(ok, 2500));
+  }
+  m.innerHTML = `<p>If you were charged, the password is on its way to your email. Otherwise try again, or write to aidan@brickandmortar.dev.</p>`;
+}
+
+// /for/<token>/: the recipient's own properties, each a pre-run free slice.
+function forBox() {
+  return `<div class="for"><p><b>For ${esc(FOR.name)}${FOR.org ? `, ${esc(FOR.org)}` : ""}.</b> ${esc(FOR.intro || "")}</p>
+    <div class="tabs">${FOR.items.map((it, i) => `<button type="button" data-i="${i}" aria-current="${i === FOR_I}">${esc(it.label)}<br><span class="meta">${esc(it.note || "")}</span></button>`).join("")}</div></div>`;
+}
+let FOR_I = 0;
+function showFor(i) {
+  FOR_I = i; const it = FOR.items[i];
+  const p = new URLSearchParams({ address: it.address }); if (it.pin) p.set("pin", it.pin);
+  $("#q").value = it.address;
+  CUR = { r: it.slice, p };
+  renderFree(it.slice, {});
+  out.querySelectorAll(".for .tabs button").forEach((b) => b.onclick = () => { showFor(Number(b.dataset.i)); scrollTo({ top: 0 }); });
 }
 
 function render(r, ms) {
@@ -248,7 +443,9 @@ $("#f").addEventListener("submit", (e) => {
   e.preventDefault();
   const a = $("#q").value.trim();
   if (!a) return;
-  history.pushState(null, "", `?${new URLSearchParams({ address: a })}`);
+  const url = `${FOR ? "/" : ""}?${new URLSearchParams({ address: a })}`;
+  if (FOR) { location.href = url; return; }
+  history.pushState(null, "", url);
   run();
 });
 window.addEventListener("popstate", run);

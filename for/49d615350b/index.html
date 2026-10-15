@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta name="robots" content="noindex">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RSRA Draft Tool · for Jeremy Burns</title>
+<meta name="description" content="RSRA Draft Tool. Drafts a Records Search with Risk Assessment (RSRA) for any property in MSP. That’s the desk-only environmental report the SBA requires on 7(a) and 504 loans over $250,000.">
+<style>
+:root{--ink:#16181d;--mute:#5d636e;--line:#d9dce2;--soft:#f3f4f6;--bg:#fff;--accent:#7a2e1f;--hi:#b3261e;--lo:#1e6b3a;--stamp:#b3261e}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ink:#e8e9ec;--mute:#a1a6b0;--line:#3a3e46;--soft:#22252b;--bg:#15171b;--accent:#e39a85;--hi:#ff8a80;--lo:#7fd39b;--stamp:#ff8a80}}
+:root[data-theme="dark"]{--ink:#e8e9ec;--mute:#a1a6b0;--line:#3a3e46;--soft:#22252b;--bg:#15171b;--accent:#e39a85;--hi:#ff8a80;--lo:#7fd39b;--stamp:#ff8a80}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+a{color:var(--accent)}
+.bar{border-bottom:1px solid var(--line);padding:20px 16px}
+.bar-in{max-width:1080px;margin:0 auto}
+.bar h1{font-size:20px;margin:0 0 4px}
+.bar p{margin:0 0 12px;color:var(--mute)}
+form{display:flex;gap:8px;flex-wrap:wrap}
+input[type=text]{flex:1 1 280px;min-width:0;font-size:16px;padding:11px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+button{font-size:16px;padding:11px 16px;border-radius:6px;border:1px solid var(--ink);background:var(--ink);color:var(--bg);cursor:pointer}
+button.ghost{background:transparent;color:var(--ink)}
+.try{margin-top:10px;font-size:13px;color:var(--mute)}
+.try a{margin-right:10px}
+main{max-width:1080px;margin:0 auto;padding:20px 16px 60px}
+.status{color:var(--mute)}
+.err{color:var(--hi)}
+.doc h2{font-size:17px;margin:28px 0 8px;padding-bottom:4px;border-bottom:2px solid var(--ink)}
+.doc h3{font-size:15px;margin:18px 0 6px}
+.stamp{border:3px solid var(--stamp);color:var(--stamp);font-weight:800;letter-spacing:.06em;text-align:center;padding:8px 10px;font-size:15px;margin:0 0 14px}
+.title{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+.title h1{font-size:24px;margin:0}
+.meta{color:var(--mute);font-size:13px}
+dl.kv{display:grid;grid-template-columns:200px 1fr;gap:4px 14px;margin:0}
+dl.kv dt{color:var(--mute)}
+dl.kv dd{margin:0;overflow-wrap:anywhere}
+.wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border-bottom:1px solid var(--line);padding:5px 6px;text-align:left;vertical-align:top}
+th{background:var(--soft);font-weight:600}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tr.miss td{color:var(--mute)}
+.call{display:flex;gap:16px;align-items:center;flex-wrap:wrap;border:1px solid var(--line);padding:12px 14px;border-radius:6px}
+.call b{font-size:22px}
+.call .High{color:var(--hi)}.call .Low{color:var(--lo)}
+.fired{color:var(--hi);font-weight:600}
+.k{font-family:ui-monospace,Menlo,monospace;font-size:12px}
+.pill{display:inline-block;border:1px solid var(--line);border-radius:10px;padding:0 6px;font-size:12px;white-space:nowrap}
+.pill.open{border-color:var(--hi);color:var(--hi)}
+.choose li{margin:6px 0}
+.choose button{font-size:14px;padding:6px 10px}
+.sig{display:grid;grid-template-columns:1fr 1fr;gap:18px 24px;margin-top:10px}
+.line{border-bottom:1px solid var(--ink);min-height:30px;padding:4px 2px;outline:none}
+.line:empty::before{content:attr(data-ph);color:var(--mute);font-size:12px}
+.lab{font-size:12px;color:var(--mute);margin-top:3px}
+.box{display:inline-block;width:14px;height:14px;border:1.5px solid var(--ink);vertical-align:-2px;margin-right:6px}
+.actions{display:flex;gap:8px;margin:0 0 12px;flex-wrap:wrap}
+.sum{border:1px solid var(--line);border-radius:8px;padding:14px;margin:0 0 18px;background:var(--soft)}
+.sum .row1{display:flex;gap:10px 18px;flex-wrap:wrap;align-items:baseline}
+.sum b.v{font-size:22px}
+.sum .High{color:var(--hi)}.sum .Low{color:var(--lo)}
+.sum ul{margin:8px 0 0;padding-left:18px}
+.buy{border:2px solid var(--ink);border-radius:8px;padding:16px 14px;margin:22px 0}
+.buy h2{border:0!important;margin:0 0 6px!important;padding:0!important;font-size:18px!important}
+.buy p{margin:6px 0}
+.buy .price{font-size:17px;font-weight:700}
+.buy .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.buy button{min-height:46px}
+.pwf{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.pwf input{flex:1 1 200px;min-width:0;font:500 16px ui-monospace,Menlo,monospace;letter-spacing:.08em;text-transform:uppercase;padding:11px 12px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+.pwerr{flex-basis:100%;margin:2px 0 0;color:var(--hi);font-size:14px;min-height:1.2em}
+#checkout{margin-top:12px}
+.locked h2{color:var(--mute);border-bottom-color:var(--line)!important}
+.locked li{margin:4px 0}
+.for{border-left:4px solid var(--accent);padding:10px 14px;margin:0 0 16px;background:var(--soft)}
+.for p{margin:4px 0}
+.for .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.for .tabs button{font-size:14px;padding:8px 10px;min-height:40px;background:transparent;color:var(--ink);border-color:var(--line);text-align:left}
+.for .tabs button[aria-current="true"]{border-color:var(--ink);font-weight:600}
+.foot{position:static;font-size:11px;color:var(--mute);margin-top:30px;border-top:1px solid var(--line);padding-top:6px}
+@media (max-width:640px){dl.kv{grid-template-columns:1fr}dl.kv dt{margin-top:6px}.sig{grid-template-columns:1fr}.title h1{font-size:20px}}
+@media print{
+  :root{--ink:#000;--mute:#444;--line:#bbb;--soft:#eee;--bg:#fff;--accent:#000;--hi:#000;--lo:#000;--stamp:#000}
+  .bar,.actions,.noprint{display:none!important}
+  main{padding:0;max-width:none}
+  body{font-size:10.5pt}
+  table{font-size:8.5pt}
+  .wrap{overflow:visible}
+  a{text-decoration:none}
+  tr,dl.kv,.call,.sig{break-inside:avoid}
+  h2{break-after:avoid}
+  .foot{position:fixed;bottom:0;left:0;right:0;border-top:1px solid #000;background:#fff;font-weight:700;text-align:center;font-size:8pt;color:#000}
+  .example{display:none}
+  @page{margin:14mm 12mm 16mm}
+}
+</style>
+<script>window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments)};</script><script defer src="/_vercel/insights/script.js"></script>
+<!-- bm-posthog:begin v2 — shared across every Vercel prototype; source ~/.claude/skills/site-analytics/posthog_snippet.html. ?me=1 opts this browser out on this site (?me=0 undoes); ?me=1&next=host1,host2 walks the opt-out across sites; headless (navigator.webdriver) never loads it. -->
+<script>
+(function(w,d){var S="rsra-draft",K="bm_me",me=false,u,p,n;
+try{u=new URLSearchParams(location.search);p=u.get("me");n=u.get("next");}catch(e){}
+try{if(p==="1"){localStorage.setItem(K,"1");}else if(p==="0"){localStorage.removeItem(K);}}catch(e){}
+if(p==="1"){d.cookie=K+"=1; path=/; max-age=63072000; SameSite=Lax";}else if(p==="0"){d.cookie=K+"=; path=/; max-age=0; SameSite=Lax";}
+try{me=localStorage.getItem(K)==="1";}catch(e){}
+if(!me&&/(?:^|; )bm_me=1/.test(d.cookie))me=true;
+if(p==="1"&&n){var h=n.split(","),f=h.shift();if(/^[a-z0-9.-]+$/.test(f)&&(f.slice(-11)===".vercel.app"||f==="brickandmortar.dev"||f==="readglean.com")){location.replace("https://"+f+"/?me=1"+(h.length?"&next="+h.join(","):""));}}
+if(navigator.webdriver===true)return;
+!function(t,e){var o,n,p,r;e.__SV||(w.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]),t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init capture register register_once unregister identify setPersonProperties reset get_distinct_id get_session_id alias set_config startSessionRecording stopSessionRecording opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing captureException getFeatureFlag isFeatureEnabled onFeatureFlags".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(d,w.posthog||[]);
+posthog.init("phc_yFgRGppL6H7DvhgZTQKbHdrY5oqnpLT482rrNYtLqnAx",{api_host:"https://us.i.posthog.com",person_profiles:"identified_only",persistence:"localStorage+cookie",opt_out_capturing_by_default:me});
+if(me){posthog.opt_out_capturing();}else{if(p==="0")posthog.opt_in_capturing();posthog.register({site:S});}
+})(window,document);
+</script>
+<!-- bm-posthog:end -->
+</head>
+<body>
+<header class="bar">
+  <div class="bar-in">
+    <h1>Draft RSRA for any property in MSP</h1>
+    <p>Address in, a draft SBA Records Search with Risk Assessment out: every government list 40 CFR 312.26 names, searched at its distance, plus the historical record back past 1940. Your Environmental Professional reviews it, makes the call and signs.</p>
+    <form id="f">
+      <input type="text" id="q" name="address" placeholder="Street address, city, MN" autocomplete="street-address" required>
+      <button type="submit">Search records</button>
+    </form>
+    <div class="try">Try: <a href="?address=2125+Hennepin+Ave+E%2C+Minneapolis%2C+MN">2125 Hennepin Ave E</a><a href="?address=701+Nicollet+Mall%2C+Minneapolis%2C+MN">701 Nicollet Mall</a><a href="?address=4301+Upton+Ave+S%2C+Minneapolis%2C+MN">4301 Upton Ave S</a></div>
+  </div>
+</header>
+<main id="out"></main>
+<script>window.FOR={"token":"49d615350b","name":"Jeremy Burns","org":"West Central Environmental Consultants","intro":"Properties that got recent SBA 504 loans in the metro, each run through the draft. Type any MSP address above to run your own.","items":[{"label":"61 Bedford Street Southeast, Minneapolis","note":"Dean Bros. Properties, LLC: $480k SBA 504, Feb 2025","address":"61 Bedford Street SE, Minneapolis, MN","pin":"3002923410019","slice":{"free":true,"generated":"2026-10-15T17:03:20.475Z","elapsed_ms":1862,"subject":{"input":"61 Bedford Street SE, Minneapolis, MN","matched":"61 BEDFORD ST SE, MINNEAPOLIS, MN, 55414","lat":44.967652146527605,"lon":-93.20860405449808,"county":"Hennepin","county_fips":"053","house_number":"61","street":"BEDFORD","city":"MINNEAPOLIS","parcel":{"address":"61 Bedford Street Southeast, Minneapolis","pin":"3002923410019","owner":"DEAN BROS PROPERTIES LLC","use":"Commercial","year_built":1949,"acres":0.46,"market_value":1000000,"legal":"LOTS 20 21 AND COM AT A PT IN         W LINE OF LOT 19 DIS 2 5/10 FT        N FROM SW COR THOF TH E PAR WITH      S LINE OF SAID LOT A DIS OF 74 FT","match":"county situs address (house number and street)","source":"Metropolitan Council regional parcels (Hennepin County layer)","source_url":"https://arcgis.metc.state.mn.us/data1/rest/services/parcels/Parcels/FeatureServer/3"},"radius_miles":0.021605245772609905,"has_boundary":true},"lists":[{"id":"npl","name":"Federal NPL (National Priorities List)","level":"Federal","cfr":"312.26(c)(1)(i)","cfr_miles":1,"astm_miles":1,"source":"EPA SEMS (Envirofacts), cached","covered":true,"miles":1,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"delisted_npl","name":"Federal delisted NPL","level":"Federal","cfr":"312.26(c)(2)(i)","cfr_miles":0.5,"astm_miles":0.5,"source":"EPA SEMS (Envirofacts), cached","covered":true,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"sems","name":"Federal SEMS (formerly CERCLIS), active non-NPL","level":"Federal","cfr":"312.26(b)(3)","cfr_miles":null,"astm_miles":0.5,"source":"EPA SEMS (Envirofacts), cached","covered":true,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"sems_archive","name":"Federal SEMS archive (former CERCLIS, NFRAP)","level":"Federal","cfr":"312.26(c)(2)(iii)","cfr_miles":0.5,"astm_miles":0.5,"source":"EPA SEMS (Envirofacts), cached; addresses geocoded by the Census geocoder","covered":true,"miles":0.5,"count":6,"on_subject":0,"open":0,"failed":false,"bands":[0,0,2,4,0]},{"id":"corracts","name":"Federal RCRA corrective action (CORRACTS)","level":"Federal","cfr":"312.26(c)(1)(ii)","cfr_miles":1,"astm_miles":1,"source":"EPA ECHO RCRA facility search, live (CleanupActionFlag = Y)","covered":true,"miles":1,"count":5,"on_subject":0,"open":5,"failed":false,"bands":[0,0,0,1,4]},{"id":"rcra_tsdf","name":"Federal RCRA treatment, storage and disposal facilities","level":"Federal","cfr":"312.26(b)(2)","cfr_miles":null,"astm_miles":0.5,"source":"EPA ECHO RCRA facility search, live","covered":true,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"rcra_gen","name":"Federal RCRA generators (LQG, SQG, VSQG)","level":"Federal","cfr":"312.26(c)(3)(i)","cfr_miles":"adjoining","astm_miles":"adjoining","source":"EPA ECHO RCRA facility search, live","covered":true,"miles":0.125,"count":15,"on_subject":1,"open":15,"failed":false,"bands":[1,14,0,0,0]},{"id":"fed_icec","name":"Federal institutional / engineering control registries","level":"Federal","cfr":"312.26(b)(6)-(7), (c)(2)(ii)","cfr_miles":0.5,"astm_miles":"property","source":"No free spatial API found. EPA SEMS site profiles carry ICs for NPL sites and are linked from every SEMS hit.","covered":false,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"erns","name":"Federal ERNS (Emergency Response Notification System)","level":"Federal","cfr":"312.26(b)(5)","cfr_miles":"property","astm_miles":"property","source":"National Response Center data is published as yearly spreadsheets with free-text locations, not a spatial API. Not searched.","covered":false,"miles":0,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"brownfields_fed","name":"Federal brownfields (EPA ACRES)","level":"Federal","cfr":"312.26(c)(1)(iii)","cfr_miles":0.5,"astm_miles":0.5,"source":"EPA EMEF Brownfields layer (ACRES), live","covered":true,"miles":0.5,"count":2,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,2,0]},{"id":"state_superfund","name":"State Superfund / PLP list (NPL-equivalent)","level":"State","cfr":"312.26(c)(1)(i)","cfr_miles":1,"astm_miles":1,"source":"MPCA Remediation Sites layer, live (per-project status): Superfund Site / sub-area","covered":true,"miles":1,"count":11,"on_subject":0,"open":5,"failed":false,"bands":[0,0,1,2,8]},{"id":"state_site_assessment","name":"State site assessment / non-listed Superfund (CERCLIS-equivalent)","level":"State","cfr":"312.26(c)(1)(iii)","cfr_miles":0.5,"astm_miles":0.5,"source":"MPCA Remediation Sites layer, live (per-project status): Site Assessment, Integrated Remediation","covered":true,"miles":0.5,"count":34,"on_subject":0,"open":14,"failed":false,"bands":[0,0,9,25,0]},{"id":"state_rcra_remediation","name":"State RCRA remediation (state corrective action)","level":"State","cfr":"312.26(c)(1)(ii)","cfr_miles":1,"astm_miles":1,"source":"MPCA Remediation Sites layer, live (per-project status): RCRA Remediation Site","covered":true,"miles":1,"count":8,"on_subject":0,"open":2,"failed":false,"bands":[0,0,0,2,6]},{"id":"landfill","name":"State landfill / solid waste facilities","level":"State","cfr":"312.26(c)(3)(ii)","cfr_miles":0.5,"astm_miles":0.5,"source":"MPCA What's In My Neighborhood, live (Solid Waste activities)","covered":true,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"lust","name":"State leaking storage tanks (LUST / petroleum leak sites)","level":"State","cfr":"312.26(c)(1)(iv)","cfr_miles":0.5,"astm_miles":0.5,"source":"MPCA Remediation Sites layer, live (per-project status): Leak Site","covered":true,"miles":0.5,"count":38,"on_subject":0,"open":0,"failed":false,"bands":[0,10,9,19,0]},{"id":"tanks","name":"State registered storage tanks (UST / AST)","level":"State","cfr":"312.26(c)(3)(iii)","cfr_miles":"adjoining","astm_miles":"adjoining","source":"MPCA What's In My Neighborhood, live (Underground / Aboveground Tanks); status is the site's active flag","covered":true,"miles":0.125,"count":12,"on_subject":1,"open":9,"failed":false,"bands":[1,11,0,0,0]},{"id":"state_ic","name":"State institutional / engineering controls","level":"State","cfr":"312.26(b)(7), (c)(2)(ii)","cfr_miles":0.5,"astm_miles":"property","source":"MPCA Remediation Sites layer, live (per-project status): ic = Y","covered":true,"miles":0.5,"count":35,"on_subject":0,"open":9,"failed":false,"bands":[0,1,0,34,0]},{"id":"vic","name":"State voluntary cleanup (VIC, Petroleum Brownfields)","level":"State","cfr":"312.26(c)(1)(iii)","cfr_miles":0.5,"astm_miles":0.5,"source":"MPCA Remediation Sites layer, live (per-project status): Brownfield Site flagged VIC or Petroleum Brownfield","covered":true,"miles":0.5,"count":95,"on_subject":1,"open":14,"failed":false,"bands":[1,9,17,68,0]},{"id":"brownfields_state","name":"State brownfields","level":"State","cfr":"312.26(c)(1)(iii)","cfr_miles":0.5,"astm_miles":0.5,"source":"MPCA Remediation Sites layer, live (per-project status): Brownfield Site","covered":true,"miles":0.5,"count":95,"on_subject":1,"open":14,"failed":false,"bands":[1,9,17,68,0]},{"id":"state_spills","name":"State emergency response / spill files","level":"State","cfr":"312.26(b)(2)","cfr_miles":"property","astm_miles":"property","source":"MPCA Remediation Sites layer, live (per-project status): Emergency Response Site. The State Duty Officer's spill log is not a public spatial layer.","covered":true,"miles":0,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"state_hw_gen","name":"State hazardous waste generators","level":"State","cfr":"312.26(c)(3)(i)","cfr_miles":"adjoining","astm_miles":"adjoining","source":"MPCA What's In My Neighborhood, live (Hazardous Waste); status is the site's active flag","covered":true,"miles":0.125,"count":19,"on_subject":1,"open":13,"failed":false,"bands":[1,18,0,0,0]},{"id":"mda_incidents","name":"MN Dept. of Agriculture agricultural chemical incidents","level":"State","cfr":"312.26(c)(1)(iii)","cfr_miles":0.5,"astm_miles":0.5,"source":"MDA publishes no free spatial API for incident sites. Not searched.","covered":false,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"local","name":"Local lists (city brownfields, fire department tank and spill files, building permits)","level":"Local","cfr":"312.26(a)","cfr_miles":"property","astm_miles":"property","source":"Not searched. These sit with the city and are requested by the EP.","covered":false,"miles":0,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]}],"totals":{"findings":375,"on_subject":5,"open":100,"unlocated":0,"sems_unplaced":7},"historical":{"earliest_year":1885,"reaches_1940":true,"sources":27,"sanborn":17,"topos":4},"risk":{"suggestion":"High risk","basis":"One or more rules fired. Under SBA SOP 50 10 8 a High Risk RSRA is followed by a Phase I ESA.","rules":[{"id":"R1","text":"The subject parcel itself appears on any release, cleanup, landfill, spill or control list, open or closed.","n":2},{"id":"R2","text":"The subject parcel holds a registered storage tank, a treatment/storage/disposal facility, or a large or small quantity hazardous waste generator.","n":1},{"id":"R3","text":"An ACTIVE NPL, SEMS, Superfund, or RCRA corrective action file within 1/3 mile (ASTM E2600-22 non-petroleum vapor screening distance).","n":0},{"id":"R4","text":"An ACTIVE petroleum leak site within 1/10 mile (ASTM E2600-22 petroleum vapor screening distance).","n":0},{"id":"R5","text":"An ACTIVE site assessment, voluntary cleanup or brownfield file on an adjoining property (within 1/8 mile).","n":0}]},"citations":{"cfr":"40 CFR 312.26, eCFR, read 2026-10-06: https://www.ecfr.gov/current/title-40/chapter-I/subchapter-J/part-312/subpart-C/section-312.26","astm":"ASTM E1527-21 section 8.2.1, Table 1 (Standard Environmental Record Sources and approximate minimum search distance), as commonly reproduced in Phase I reports","sba":"SBA SOP 50 10 8 and Procedural Notice 5000-866054 (2025-03-20): an RSRA searches the databases an AAI-compliant Phase I searches"},"adjoining_miles":0.125,"errors":[],"sems_built_on":"2026-10-06","key":"pin:053:3002923410019"}},{"label":"7680 Highway 65 Northeast, Fridley","note":"Motomaxx INC.: $293k SBA 504, Feb 2025","address":"7680 Highway 65 NE, Fridley, MN","pin":"123024220008","slice":{"free":true,"generated":"2026-10-15T17:03:22.193Z","elapsed_ms":1186,"subject":{"input":"7680 Highway 65 NE, Fridley, MN","matched":"7680 STATE HWY 65, FRIDLEY, MN, 55432","lat":45.107340105582715,"lon":-93.2444852044226,"county":"Anoka","county_fips":"003","house_number":"7680","street":"65","city":"FRIDLEY","parcel":{"address":"7680 Highway 65 Northeast, Fridley","pin":"123024220008","owner":"CITI GROUP AUTO INC","use":"3a COMMERCIAL PREFERENTIAL","year_built":null,"acres":0.67613791,"market_value":652900,"legal":null,"match":"parcel chosen by the user from those near the geocoded point","source":"Metropolitan Council regional parcels (Anoka County layer)","source_url":"https://arcgis.metc.state.mn.us/data1/rest/services/parcels/Parcels/FeatureServer/0"},"radius_miles":0.029713757118616603,"has_boundary":true},"lists":[{"id":"npl","name":"Federal NPL (National Priorities List)","level":"Federal","cfr":"312.26(c)(1)(i)","cfr_miles":1,"astm_miles":1,"source":"EPA SEMS (Envirofacts), cached","covered":true,"miles":1,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"delisted_npl","name":"Federal delisted NPL","level":"Federal","cfr":"312.26(c)(2)(i)","cfr_miles":0.5,"astm_miles":0.5,"source":"EPA SEMS (Envirofacts), cached","covered":true,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"sems","name":"Federal SEMS (formerly CERCLIS), active non-NPL","level":"Federal","cfr":"312.26(b)(3)","cfr_miles":null,"astm_miles":0.5,"source":"EPA SEMS (Envirofacts), cached","covered":true,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"sems_archive","name":"Federal SEMS archive (former CERCLIS, NFRAP)","level":"Federal","cfr":"312.26(c)(2)(iii)","cfr_miles":0.5,"astm_miles":0.5,"source":"EPA SEMS (Envirofacts), cached; addresses geocoded by the Census geocoder","covered":true,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"corracts","name":"Federal RCRA corrective action (CORRACTS)","level":"Federal","cfr":"312.26(c)(1)(ii)","cfr_miles":1,"astm_miles":1,"source":"EPA ECHO RCRA facility search, live (CleanupActionFlag = Y)","covered":true,"miles":1,"count":1,"on_subject":0,"open":1,"failed":false,"bands":[0,0,0,0,1]},{"id":"rcra_tsdf","name":"Federal RCRA treatment, storage and disposal facilities","level":"Federal","cfr":"312.26(b)(2)","cfr_miles":null,"astm_miles":0.5,"source":"EPA ECHO RCRA facility search, live","covered":true,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"rcra_gen","name":"Federal RCRA generators (LQG, SQG, VSQG)","level":"Federal","cfr":"312.26(c)(3)(i)","cfr_miles":"adjoining","astm_miles":"adjoining","source":"EPA ECHO RCRA facility search, live","covered":true,"miles":0.125,"count":11,"on_subject":1,"open":11,"failed":false,"bands":[1,10,0,0,0]},{"id":"fed_icec","name":"Federal institutional / engineering control registries","level":"Federal","cfr":"312.26(b)(6)-(7), (c)(2)(ii)","cfr_miles":0.5,"astm_miles":"property","source":"No free spatial API found. EPA SEMS site profiles carry ICs for NPL sites and are linked from every SEMS hit.","covered":false,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"erns","name":"Federal ERNS (Emergency Response Notification System)","level":"Federal","cfr":"312.26(b)(5)","cfr_miles":"property","astm_miles":"property","source":"National Response Center data is published as yearly spreadsheets with free-text locations, not a spatial API. Not searched.","covered":false,"miles":0,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"brownfields_fed","name":"Federal brownfields (EPA ACRES)","level":"Federal","cfr":"312.26(c)(1)(iii)","cfr_miles":0.5,"astm_miles":0.5,"source":"EPA EMEF Brownfields layer (ACRES), live","covered":true,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"state_superfund","name":"State Superfund / PLP list (NPL-equivalent)","level":"State","cfr":"312.26(c)(1)(i)","cfr_miles":1,"astm_miles":1,"source":"MPCA Remediation Sites layer, live (per-project status): Superfund Site / sub-area","covered":true,"miles":1,"count":4,"on_subject":0,"open":3,"failed":false,"bands":[0,0,0,0,4]},{"id":"state_site_assessment","name":"State site assessment / non-listed Superfund (CERCLIS-equivalent)","level":"State","cfr":"312.26(c)(1)(iii)","cfr_miles":0.5,"astm_miles":0.5,"source":"MPCA Remediation Sites layer, live (per-project status): Site Assessment, Integrated Remediation","covered":true,"miles":0.5,"count":7,"on_subject":0,"open":2,"failed":false,"bands":[0,4,1,2,0]},{"id":"state_rcra_remediation","name":"State RCRA remediation (state corrective action)","level":"State","cfr":"312.26(c)(1)(ii)","cfr_miles":1,"astm_miles":1,"source":"MPCA Remediation Sites layer, live (per-project status): RCRA Remediation Site","covered":true,"miles":1,"count":4,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,1,3]},{"id":"landfill","name":"State landfill / solid waste facilities","level":"State","cfr":"312.26(c)(3)(ii)","cfr_miles":0.5,"astm_miles":0.5,"source":"MPCA What's In My Neighborhood, live (Solid Waste activities)","covered":true,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"lust","name":"State leaking storage tanks (LUST / petroleum leak sites)","level":"State","cfr":"312.26(c)(1)(iv)","cfr_miles":0.5,"astm_miles":0.5,"source":"MPCA Remediation Sites layer, live (per-project status): Leak Site","covered":true,"miles":0.5,"count":19,"on_subject":1,"open":0,"failed":false,"bands":[1,3,2,13,0]},{"id":"tanks","name":"State registered storage tanks (UST / AST)","level":"State","cfr":"312.26(c)(3)(iii)","cfr_miles":"adjoining","astm_miles":"adjoining","source":"MPCA What's In My Neighborhood, live (Underground / Aboveground Tanks); status is the site's active flag","covered":true,"miles":0.125,"count":5,"on_subject":1,"open":3,"failed":false,"bands":[1,4,0,0,0]},{"id":"state_ic","name":"State institutional / engineering controls","level":"State","cfr":"312.26(b)(7), (c)(2)(ii)","cfr_miles":0.5,"astm_miles":"property","source":"MPCA Remediation Sites layer, live (per-project status): ic = Y","covered":true,"miles":0.5,"count":7,"on_subject":2,"open":0,"failed":false,"bands":[2,4,0,1,0]},{"id":"vic","name":"State voluntary cleanup (VIC, Petroleum Brownfields)","level":"State","cfr":"312.26(c)(1)(iii)","cfr_miles":0.5,"astm_miles":0.5,"source":"MPCA Remediation Sites layer, live (per-project status): Brownfield Site flagged VIC or Petroleum Brownfield","covered":true,"miles":0.5,"count":11,"on_subject":1,"open":2,"failed":false,"bands":[1,4,2,4,0]},{"id":"brownfields_state","name":"State brownfields","level":"State","cfr":"312.26(c)(1)(iii)","cfr_miles":0.5,"astm_miles":0.5,"source":"MPCA Remediation Sites layer, live (per-project status): Brownfield Site","covered":true,"miles":0.5,"count":11,"on_subject":1,"open":2,"failed":false,"bands":[1,4,2,4,0]},{"id":"state_spills","name":"State emergency response / spill files","level":"State","cfr":"312.26(b)(2)","cfr_miles":"property","astm_miles":"property","source":"MPCA Remediation Sites layer, live (per-project status): Emergency Response Site. The State Duty Officer's spill log is not a public spatial layer.","covered":true,"miles":0,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"state_hw_gen","name":"State hazardous waste generators","level":"State","cfr":"312.26(c)(3)(i)","cfr_miles":"adjoining","astm_miles":"adjoining","source":"MPCA What's In My Neighborhood, live (Hazardous Waste); status is the site's active flag","covered":true,"miles":0.125,"count":21,"on_subject":1,"open":15,"failed":false,"bands":[1,20,0,0,0]},{"id":"mda_incidents","name":"MN Dept. of Agriculture agricultural chemical incidents","level":"State","cfr":"312.26(c)(1)(iii)","cfr_miles":0.5,"astm_miles":0.5,"source":"MDA publishes no free spatial API for incident sites. Not searched.","covered":false,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"local","name":"Local lists (city brownfields, fire department tank and spill files, building permits)","level":"Local","cfr":"312.26(a)","cfr_miles":"property","astm_miles":"property","source":"Not searched. These sit with the city and are requested by the EP.","covered":false,"miles":0,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]}],"totals":{"findings":101,"on_subject":8,"open":39,"unlocated":0,"sems_unplaced":0},"historical":{"earliest_year":1902,"reaches_1940":true,"sources":13,"sanborn":0,"topos":5},"risk":{"suggestion":"High risk","basis":"One or more rules fired. Under SBA SOP 50 10 8 a High Risk RSRA is followed by a Phase I ESA.","rules":[{"id":"R1","text":"The subject parcel itself appears on any release, cleanup, landfill, spill or control list, open or closed.","n":5},{"id":"R2","text":"The subject parcel holds a registered storage tank, a treatment/storage/disposal facility, or a large or small quantity hazardous waste generator.","n":1},{"id":"R3","text":"An ACTIVE NPL, SEMS, Superfund, or RCRA corrective action file within 1/3 mile (ASTM E2600-22 non-petroleum vapor screening distance).","n":0},{"id":"R4","text":"An ACTIVE petroleum leak site within 1/10 mile (ASTM E2600-22 petroleum vapor screening distance).","n":0},{"id":"R5","text":"An ACTIVE site assessment, voluntary cleanup or brownfield file on an adjoining property (within 1/8 mile).","n":3}]},"citations":{"cfr":"40 CFR 312.26, eCFR, read 2026-10-06: https://www.ecfr.gov/current/title-40/chapter-I/subchapter-J/part-312/subpart-C/section-312.26","astm":"ASTM E1527-21 section 8.2.1, Table 1 (Standard Environmental Record Sources and approximate minimum search distance), as commonly reproduced in Phase I reports","sba":"SBA SOP 50 10 8 and Procedural Notice 5000-866054 (2025-03-20): an RSRA searches the databases an AAI-compliant Phase I searches"},"adjoining_miles":0.125,"errors":[],"sems_built_on":"2026-10-06","key":"pin:003:123024220008"}},{"label":"7970 Wallace Road, Eden Prairie","note":"Affinitech, INC.: $1.6M SBA 504, Jan 2025","address":"7970 Wallace Road, Eden Prairie, MN","pin":"1611622210007","slice":{"free":true,"generated":"2026-10-15T17:03:23.103Z","elapsed_ms":909,"subject":{"input":"7970 Wallace Road, Eden Prairie, MN","matched":"7970 WALLACE RD, EDEN PRAIRIE, MN, 55344","lat":44.859442492094544,"lon":-93.47232688390751,"county":"Hennepin","county_fips":"053","house_number":"7970","street":"WALLACE","city":"EDEN PRAIRIE","parcel":{"address":"7970 Wallace Road, Eden Prairie","pin":"1611622210007","owner":"7970 WALLACE LLC","use":"Industrial","year_built":1978,"acres":2.03,"market_value":2792000,"legal":null,"match":"county situs address (house number and street)","source":"Metropolitan Council regional parcels (Hennepin County layer)","source_url":"https://arcgis.metc.state.mn.us/data1/rest/services/parcels/Parcels/FeatureServer/3"},"radius_miles":0.06373786293741002,"has_boundary":true},"lists":[{"id":"npl","name":"Federal NPL (National Priorities List)","level":"Federal","cfr":"312.26(c)(1)(i)","cfr_miles":1,"astm_miles":1,"source":"EPA SEMS (Envirofacts), cached","covered":true,"miles":1,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"delisted_npl","name":"Federal delisted NPL","level":"Federal","cfr":"312.26(c)(2)(i)","cfr_miles":0.5,"astm_miles":0.5,"source":"EPA SEMS (Envirofacts), cached","covered":true,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"sems","name":"Federal SEMS (formerly CERCLIS), active non-NPL","level":"Federal","cfr":"312.26(b)(3)","cfr_miles":null,"astm_miles":0.5,"source":"EPA SEMS (Envirofacts), cached","covered":true,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"sems_archive","name":"Federal SEMS archive (former CERCLIS, NFRAP)","level":"Federal","cfr":"312.26(c)(2)(iii)","cfr_miles":0.5,"astm_miles":0.5,"source":"EPA SEMS (Envirofacts), cached; addresses geocoded by the Census geocoder","covered":true,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"corracts","name":"Federal RCRA corrective action (CORRACTS)","level":"Federal","cfr":"312.26(c)(1)(ii)","cfr_miles":1,"astm_miles":1,"source":"EPA ECHO RCRA facility search, live (CleanupActionFlag = Y)","covered":true,"miles":1,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"rcra_tsdf","name":"Federal RCRA treatment, storage and disposal facilities","level":"Federal","cfr":"312.26(b)(2)","cfr_miles":null,"astm_miles":0.5,"source":"EPA ECHO RCRA facility search, live","covered":true,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"rcra_gen","name":"Federal RCRA generators (LQG, SQG, VSQG)","level":"Federal","cfr":"312.26(c)(3)(i)","cfr_miles":"adjoining","astm_miles":"adjoining","source":"EPA ECHO RCRA facility search, live","covered":true,"miles":0.125,"count":8,"on_subject":0,"open":8,"failed":false,"bands":[0,8,0,0,0]},{"id":"fed_icec","name":"Federal institutional / engineering control registries","level":"Federal","cfr":"312.26(b)(6)-(7), (c)(2)(ii)","cfr_miles":0.5,"astm_miles":"property","source":"No free spatial API found. EPA SEMS site profiles carry ICs for NPL sites and are linked from every SEMS hit.","covered":false,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"erns","name":"Federal ERNS (Emergency Response Notification System)","level":"Federal","cfr":"312.26(b)(5)","cfr_miles":"property","astm_miles":"property","source":"National Response Center data is published as yearly spreadsheets with free-text locations, not a spatial API. Not searched.","covered":false,"miles":0,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"brownfields_fed","name":"Federal brownfields (EPA ACRES)","level":"Federal","cfr":"312.26(c)(1)(iii)","cfr_miles":0.5,"astm_miles":0.5,"source":"EPA EMEF Brownfields layer (ACRES), live","covered":true,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"state_superfund","name":"State Superfund / PLP list (NPL-equivalent)","level":"State","cfr":"312.26(c)(1)(i)","cfr_miles":1,"astm_miles":1,"source":"MPCA Remediation Sites layer, live (per-project status): Superfund Site / sub-area","covered":true,"miles":1,"count":1,"on_subject":0,"open":1,"failed":false,"bands":[0,0,1,0,0]},{"id":"state_site_assessment","name":"State site assessment / non-listed Superfund (CERCLIS-equivalent)","level":"State","cfr":"312.26(c)(1)(iii)","cfr_miles":0.5,"astm_miles":0.5,"source":"MPCA Remediation Sites layer, live (per-project status): Site Assessment, Integrated Remediation","covered":true,"miles":0.5,"count":6,"on_subject":0,"open":2,"failed":false,"bands":[0,2,1,3,0]},{"id":"state_rcra_remediation","name":"State RCRA remediation (state corrective action)","level":"State","cfr":"312.26(c)(1)(ii)","cfr_miles":1,"astm_miles":1,"source":"MPCA Remediation Sites layer, live (per-project status): RCRA Remediation Site","covered":true,"miles":1,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"landfill","name":"State landfill / solid waste facilities","level":"State","cfr":"312.26(c)(3)(ii)","cfr_miles":0.5,"astm_miles":0.5,"source":"MPCA What's In My Neighborhood, live (Solid Waste activities)","covered":true,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"lust","name":"State leaking storage tanks (LUST / petroleum leak sites)","level":"State","cfr":"312.26(c)(1)(iv)","cfr_miles":0.5,"astm_miles":0.5,"source":"MPCA Remediation Sites layer, live (per-project status): Leak Site","covered":true,"miles":0.5,"count":10,"on_subject":0,"open":0,"failed":false,"bands":[0,2,2,6,0]},{"id":"tanks","name":"State registered storage tanks (UST / AST)","level":"State","cfr":"312.26(c)(3)(iii)","cfr_miles":"adjoining","astm_miles":"adjoining","source":"MPCA What's In My Neighborhood, live (Underground / Aboveground Tanks); status is the site's active flag","covered":true,"miles":0.125,"count":4,"on_subject":1,"open":3,"failed":false,"bands":[1,3,0,0,0]},{"id":"state_ic","name":"State institutional / engineering controls","level":"State","cfr":"312.26(b)(7), (c)(2)(ii)","cfr_miles":0.5,"astm_miles":"property","source":"MPCA Remediation Sites layer, live (per-project status): ic = Y","covered":true,"miles":0.5,"count":9,"on_subject":0,"open":2,"failed":false,"bands":[0,1,3,5,0]},{"id":"vic","name":"State voluntary cleanup (VIC, Petroleum Brownfields)","level":"State","cfr":"312.26(c)(1)(iii)","cfr_miles":0.5,"astm_miles":0.5,"source":"MPCA Remediation Sites layer, live (per-project status): Brownfield Site flagged VIC or Petroleum Brownfield","covered":true,"miles":0.5,"count":11,"on_subject":0,"open":3,"failed":false,"bands":[0,5,3,3,0]},{"id":"brownfields_state","name":"State brownfields","level":"State","cfr":"312.26(c)(1)(iii)","cfr_miles":0.5,"astm_miles":0.5,"source":"MPCA Remediation Sites layer, live (per-project status): Brownfield Site","covered":true,"miles":0.5,"count":11,"on_subject":0,"open":3,"failed":false,"bands":[0,5,3,3,0]},{"id":"state_spills","name":"State emergency response / spill files","level":"State","cfr":"312.26(b)(2)","cfr_miles":"property","astm_miles":"property","source":"MPCA Remediation Sites layer, live (per-project status): Emergency Response Site. The State Duty Officer's spill log is not a public spatial layer.","covered":true,"miles":0,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"state_hw_gen","name":"State hazardous waste generators","level":"State","cfr":"312.26(c)(3)(i)","cfr_miles":"adjoining","astm_miles":"adjoining","source":"MPCA What's In My Neighborhood, live (Hazardous Waste); status is the site's active flag","covered":true,"miles":0.125,"count":9,"on_subject":1,"open":7,"failed":false,"bands":[1,8,0,0,0]},{"id":"mda_incidents","name":"MN Dept. of Agriculture agricultural chemical incidents","level":"State","cfr":"312.26(c)(1)(iii)","cfr_miles":0.5,"astm_miles":0.5,"source":"MDA publishes no free spatial API for incident sites. Not searched.","covered":false,"miles":0.5,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]},{"id":"local","name":"Local lists (city brownfields, fire department tank and spill files, building permits)","level":"Local","cfr":"312.26(a)","cfr_miles":"property","astm_miles":"property","source":"Not searched. These sit with the city and are requested by the EP.","covered":false,"miles":0,"count":0,"on_subject":0,"open":0,"failed":false,"bands":[0,0,0,0,0]}],"totals":{"findings":69,"on_subject":2,"open":29,"unlocated":0,"sems_unplaced":1},"historical":{"earliest_year":1896,"reaches_1940":true,"sources":8,"sanborn":0,"topos":5},"risk":{"suggestion":"High risk","basis":"One or more rules fired. Under SBA SOP 50 10 8 a High Risk RSRA is followed by a Phase I ESA.","rules":[{"id":"R1","text":"The subject parcel itself appears on any release, cleanup, landfill, spill or control list, open or closed.","n":0},{"id":"R2","text":"The subject parcel holds a registered storage tank, a treatment/storage/disposal facility, or a large or small quantity hazardous waste generator.","n":0},{"id":"R3","text":"An ACTIVE NPL, SEMS, Superfund, or RCRA corrective action file within 1/3 mile (ASTM E2600-22 non-petroleum vapor screening distance).","n":1},{"id":"R4","text":"An ACTIVE petroleum leak site within 1/10 mile (ASTM E2600-22 petroleum vapor screening distance).","n":0},{"id":"R5","text":"An ACTIVE site assessment, voluntary cleanup or brownfield file on an adjoining property (within 1/8 mile).","n":3}]},"citations":{"cfr":"40 CFR 312.26, eCFR, read 2026-10-06: https://www.ecfr.gov/current/title-40/chapter-I/subchapter-J/part-312/subpart-C/section-312.26","astm":"ASTM E1527-21 section 8.2.1, Table 1 (Standard Environmental Record Sources and approximate minimum search distance), as commonly reproduced in Phase I reports","sba":"SBA SOP 50 10 8 and Procedural Notice 5000-866054 (2025-03-20): an RSRA searches the databases an AAI-compliant Phase I searches"},"adjoining_miles":0.125,"errors":[],"sems_built_on":"2026-10-06","key":"pin:053:1611622210007"}}]};</script>
+<script>
+const $ = (s, el = document) => el.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const out = $("#out");
+const fmtMi = (m) => m === 0 ? "On subject" : `${m.toFixed(3)} mi <span class="meta">(${Math.round(m * 5280).toLocaleString()} ft)</span>`;
+const fmtDist = (l) => l.miles === 0 ? "Subject property" : l.miles === 0.125 && (l.cfr_miles === "adjoining" || l.astm_miles === "adjoining") ? "Adjoining (1/8 mi)" : `${l.miles} mi`;
+const BANDS = [[0, 0, "Subject"], [0, 0.125, "≤1/8"], [0.125, 0.25, "1/8–1/4"], [0.25, 0.5, "1/4–1/2"], [0.5, 1, "1/2–1"]];
+const inBand = (m, [lo, hi]) => hi === 0 ? m === 0 : m > lo && m <= hi + 1e-9;
+
+// Paywall (README "## The paywall"). One property's full draft, PRICE once.
+const PRICE = 40;
+const PK = "pk_live_51TUvvcBzD4mN8eOD28H6oQkFwFHwF1SLtWxN1vHRmnSxntWFefgd33mEIVmjv8ekxWgkZft3OpPlzmVXMIeHPBwj003998hjTf";
+const FOR = window.FOR || null; // set on /for/<token>/ pages
+function track(name, data = {}) {
+  const d = { ...data, ...(FOR ? { for: FOR.token } : {}) };
+  try { window.va && window.va("event", { name, data: d }); } catch (e) {}
+  try { window.posthog && window.posthog.capture && window.posthog.capture(name, d); } catch (e) {}
+}
+const PWS = { get(k) { try { return JSON.parse(localStorage.getItem("rsra_pw") || "{}")[k] || null; } catch (e) { return null; } },
+  set(k, v) { try { const m = JSON.parse(localStorage.getItem("rsra_pw") || "{}"); if (v) m[k] = v; else delete m[k]; localStorage.setItem("rsra_pw", JSON.stringify(m)); } catch (e) {} } };
+
+const EXAMPLE = "2125 Hennepin Ave E, Minneapolis, MN";
+function params() { return new URLSearchParams(location.search); }
+const apiUrl = (p, pw) => { const q = new URLSearchParams(p); q.delete("paid"); q.delete("pw"); if (pw) q.set("pw", pw); return `/api/rsra?${q}`; };
+
+let CUR = null; // the report on screen: { r, p }
+async function run() {
+  const p = params();
+  const paidq = p.get("paid"), pwq = p.get("pw");
+  if (pwq || paidq) { const c = new URLSearchParams(p); c.delete("pw"); c.delete("paid"); history.replaceState(null, "", location.pathname + (c.toString() ? "?" + c : "")); }
+  if (FOR && !p.get("address")) return showFor(0);
+  // open on a worked example, never a blank page; the visitor's own address replaces it
+  const example = !p.get("address");
+  if (example) p.set("address", EXAMPLE);
+  const address = p.get("address");
+  $("#q").value = address;
+  out.innerHTML = `<p class="status">Searching EPA, MPCA, the county parcel record, USGS and the Library of Congress…</p>`;
+  let r;
+  try {
+    // the example is a static snapshot of the free slice (scripts/build_example.mjs); an address runs live
+    r = await (await fetch(example && !pwq ? "/example.json" : apiUrl(p, pwq))).json();
+    if (!r.error && !r.choose && r.free && !pwq) {
+      const saved = PWS.get(r.key);
+      if (saved) {
+        out.insertAdjacentHTML("afterbegin", `<p class="status">Opening your full draft…</p>`);
+        const full = await (await fetch(apiUrl(p, saved))).json();
+        if (full && full.free === false) { r = full; track("unlock", { via: "saved" }); } else PWS.set(r.key, null);
+      }
+    }
+  } catch (e) { out.innerHTML = `<p class="err">The search did not complete: ${esc(e.message)}</p>`; return; }
+  if (r.error) { out.innerHTML = `<p class="err">${esc(r.error)}</p>`; return; }
+  if (r.choose) return choose(address, r.choose);
+  CUR = { r, p };
+  if (r.free === false) {
+    if (pwq) { PWS.set(r.key, pwq); track("unlock", { via: "link" }); }
+    render(r);
+  } else {
+    renderFree(r, { example });
+    if (r.pw_error) { openPw(); $("#pwf input").value = pwq || ""; $("#pwf .pwerr").textContent = r.pw_error; }
+  }
+  if (paidq) confirmPaid(paidq);
+}
+
+function choose(address, c) {
+  const link = (extra) => `?${new URLSearchParams({ address, ...extra })}`;
+  out.innerHTML = `<div class="choose"><h2>Which parcel is the subject?</h2>
+  <p>The county parcel file has no parcel with the address <b>${esc(c.matched)}</b>, and the geocoded point falls in the street. These are the parcels within 300 feet of it, nearest first.</p>
+  <ul>${c.candidates.map((x) => `<li><a href="${link({ pin: x.pin })}"><b>${esc(x.address)}</b></a> · ${esc(x.owner || "")} · ${esc(x.use || "")} · ${x.feet} ft · PIN ${esc(x.pin)}</li>`).join("")}</ul>
+  <p><a href="${link({ point: "1" })}">None of these; measure from the address point instead</a></p></div>`;
+}
+
+function subjectDl(s) {
+  const P = s.parcel;
+  return `<dl class="kv">
+      <dt>Address as entered</dt><dd>${esc(s.input)}</dd>
+      <dt>Geocoded address</dt><dd>${esc(s.matched)} <span class="meta">(U.S. Census geocoder)</span></dd>
+      ${P ? `<dt>County parcel</dt><dd>${esc(P.address)} · PIN ${esc(P.pin)}</dd>
+      <dt>Owner of record</dt><dd>${esc(P.owner || "Not recorded")}</dd>
+      <dt>Use class</dt><dd>${esc(P.use || "Not recorded")}</dd>
+      <dt>Current building built</dt><dd>${P.year_built || "Not recorded"}</dd>
+      <dt>Parcel area</dt><dd>${P.acres != null ? P.acres + " acres" : "Not recorded"}</dd>` : `<dt>County parcel</dt><dd>${esc(s.parcel_note)}</dd>`}
+      <dt>County</dt><dd>${esc(s.county || "")}</dd>
+    </dl>`;
+}
+
+function label(r) { const P = r.subject.parcel; return P ? P.address : r.subject.matched; }
+
+function renderFree(r, { example } = {}) {
+  const s = r.subject, T = r.totals, H = r.historical;
+  const gen = new Date(r.generated);
+  const fired = r.risk.rules.filter((x) => x.n);
+  const covered = r.lists.filter((l) => l.covered && !l.failed);
+  const rows = r.lists.map((l) => {
+    if (!l.covered || l.failed) return `<tr class="miss"><td>${esc(l.name)}<div class="meta">${l.failed ? "Source did not answer for this report." : esc(l.source)}</div></td><td>${fmtDist(l)}</td><td colspan="6"><b>Not searched</b></td></tr>`;
+    const cells = BANDS.map((b, i) => b[1] <= l.miles || b[1] === 0 ? `<td class="n">${l.bands[i]}</td>` : `<td class="n meta">–</td>`).join("");
+    return `<tr><td>${esc(l.name)}<div class="meta">${esc(l.source)}</div></td><td>${fmtDist(l)}</td>${cells}<td class="n"><b>${l.count}</b></td></tr>`;
+  }).join("");
+  out.innerHTML = `
+  ${example ? `<p class="status example">Example: ${esc(EXAMPLE.replace(", MN", ""))}. Type any MSP address above to run your own.</p>` : ""}
+  ${FOR ? forBox() : ""}
+  <div class="sum" aria-live="polite">
+    <div class="row1"><span>Suggested call for <b>${esc(label(r))}</b>:</span><b class="v ${r.risk.suggestion.split(" ")[0]}">${esc(r.risk.suggestion)}</b></div>
+    <ul>
+      <li>${fired.length ? `${fired.length} of ${r.risk.rules.length} rules fired (${fired.map((x) => `${x.id} on ${x.n}`).join(", ")}).` : `None of the ${r.risk.rules.length} rules fired.`}</li>
+      <li>${T.findings.toLocaleString()} government records within search distance${T.on_subject ? `, ${T.on_subject} of them on the parcel itself` : ""}${T.open ? `, ${T.open} still open` : ""}.</li>
+      <li>Historical record back to ${H.earliest_year ?? "no dated source"}${H.reaches_1940 ? " (before 1940, as SBA requires)" : ""}: ${H.topos} USGS topo editions, ${H.sanborn} Sanborn editions.</li>
+    </ul>
+  </div>
+  ${buyBox(r)}
+  <article class="doc">
+    <div class="stamp">DRAFT FOR ENVIRONMENTAL PROFESSIONAL REVIEW</div>
+    <div class="title"><h1>Records Search with Risk Assessment</h1><span class="meta">Records searched ${gen.toLocaleString("en-US", { dateStyle: "long", timeStyle: "short" })}</span></div>
+    <h2>1. Subject property</h2>
+    ${subjectDl(s)}
+    <h2>2. Suggested risk call</h2>
+    <div class="wrap"><table><thead><tr><th>Rule</th><th>A High Risk suggestion when</th><th>Result</th></tr></thead><tbody>${r.risk.rules.map((x) => `<tr><td class="k">${x.id}</td><td>${esc(x.text)}</td><td class="${x.n ? "fired" : ""}">${x.n ? `Fired on ${x.n}` : "Did not fire"}</td></tr>`).join("")}</tbody></table></div>
+    <h2>3. Government records searched</h2>
+    <p class="meta">${covered.length} of ${r.lists.length} lists searched. Records by distance from the parcel; "–" is beyond that list's search distance.</p>
+    <div class="wrap"><table><thead><tr><th>List</th><th>Searched to</th>${BANDS.map((b) => `<th class="n">${b[2]}</th>`).join("")}<th class="n">Total</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <div class="locked">
+      <h2>In the full draft</h2>
+      <ul>
+        <li>All ${T.findings.toLocaleString()} records by name, address on file, distance in feet, open or closed with dates, and a link to the agency's own record.</li>
+        <li>Which records each rule fired on, so the reviewer can check the call row by row.</li>
+        <li>The historical-use table: ${H.sources} dated sources for this location, plus aerials and city directories to record.</li>
+        <li>The Environmental Professional's declaration and signature page, and the method and citations.</li>
+        <li>Prints clean to PDF, every page stamped as a draft.</li>
+      </ul>
+    </div>
+  </article>`;
+  wirePay(r);
+  document.title = `RSRA Draft · ${label(r)}`;
+  track("preview_open", { example: !!example, key: r.key, call: r.risk.suggestion });
+}
+
+function buyBox(r) {
+  return `<section class="buy" id="buy">
+    <h2>The full draft for ${esc(label(r))}</h2>
+    <p>Every record behind the call above, the historical record, and the signature page, ready to print for your Environmental Professional.</p>
+    <p class="price">$${PRICE} for this property, once.</p>
+    <div class="btns"><button type="button" id="buyBtn">Buy the full draft</button><button type="button" class="ghost" id="havepw" aria-expanded="false">Have a password?</button></div>
+    <form class="pwf" id="pwf" hidden><label class="meta" for="pw1" style="flex-basis:100%">Password from your email</label><input id="pw1" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX"><button>Open</button><p class="pwerr" role="alert"></p></form>
+    <div id="paidMsg" hidden></div>
+    <div id="checkout"></div>
+  </section>`;
+}
+
+const loadStripe = () => window.Stripe ? Promise.resolve() : new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = "https://js.stripe.com/dahlia/stripe.js"; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+let CO = null;
+function openPw() { const f = $("#pwf"); if (!f) return; f.hidden = false; $("#havepw").setAttribute("aria-expanded", "true"); }
+function wirePay(r) {
+  if (CO) { try { CO.destroy(); } catch (e) {} CO = null; }
+  $("#havepw").onclick = () => { const f = $("#pwf"), on = f.hidden; f.hidden = !on; $("#havepw").setAttribute("aria-expanded", on); if (on) f.querySelector("input").focus(); };
+  $("#pwf").onsubmit = async (e) => {
+    e.preventDefault();
+    const v = $("#pw1").value.trim(), err = $("#pwf .pwerr"), b = $("#pwf button");
+    if (!v) { err.textContent = "Enter the password from your email."; return; }
+    b.disabled = true; err.textContent = "Checking…";
+    try {
+      const full = await (await fetch(apiUrl(CUR.p, v) + `&k=${encodeURIComponent(CUR.r.key || "")}`)).json();
+      if (full.free === false) { PWS.set(full.key, v); track("unlock", { via: "form" }); CUR.r = full; render(full); scrollTo({ top: 0 }); }
+      else err.textContent = full.pw_error || full.error || "That password didn't match.";
+    } catch (x) { err.textContent = "Couldn't check the password. Try again in a minute."; }
+    finally { b.disabled = false; }
+  };
+  $("#buyBtn").onclick = async () => {
+    const b = $("#buyBtn");
+    track("checkout_open", { key: r.key });
+    if (CO) { $("#checkout").scrollIntoView({ behavior: "smooth", block: "start" }); return; }
+    b.disabled = true; const t = b.textContent; b.textContent = "Loading secure checkout…";
+    try {
+      await loadStripe(); const st = Stripe(PK);
+      const body = JSON.stringify({ address: CUR.p.get("address") || EXAMPLE, pin: CUR.p.get("pin") || r.subject.parcel?.pin || "", key: r.key, label: label(r) });
+      const opts = { fetchClientSecret: () => fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body }).then((x) => x.json()).then((j) => { if (!j.clientSecret) throw new Error(j.error || "Checkout could not start."); return j.clientSecret; }) };
+      CO = await (st.createEmbeddedCheckoutPage ? st.createEmbeddedCheckoutPage(opts) : st.initEmbeddedCheckout(opts));
+      CO.mount("#checkout"); setTimeout(() => $("#checkout").scrollIntoView({ behavior: "smooth", block: "start" }), 300);
+    } catch (x) { CO = null; openPw(); $("#pwf .pwerr").textContent = "Checkout didn't load. Refresh and try again, or email aidan@brickandmortar.dev."; }
+    finally { b.disabled = false; b.textContent = t; }
+  };
+}
+
+// Back from Stripe: ?paid=<session>. The page never shows the password; the email carries it.
+async function confirmPaid(id) {
+  const m = $("#paidMsg"); if (!m) return;
+  m.hidden = false; m.innerHTML = `<p><b>Confirming your payment…</b></p>`;
+  $("#buy").scrollIntoView({ block: "start" });
+  for (let i = 0; i < 6; i++) {
+    try {
+      const j = await (await fetch(`/api/session-status?session_id=${encodeURIComponent(id)}`)).json();
+      if (j.paid) {
+        m.innerHTML = `<p><b>Paid. Check your email for the password and a link to the full draft.</b>${j.email ? ` Sent to ${esc(j.email)}.` : ""} Enter it here once it lands:</p>`;
+        openPw(); track("paid", { key: CUR?.r?.key }); return;
+      }
+    } catch (e) {}
+    await new Promise((ok) => setTimeout(ok, 2500));
+  }
+  m.innerHTML = `<p>If you were charged, the password is on its way to your email. Otherwise try again, or write to aidan@brickandmortar.dev.</p>`;
+}
+
+// /for/<token>/: the recipient's own properties, each a pre-run free slice.
+function forBox() {
+  return `<div class="for"><p><b>For ${esc(FOR.name)}${FOR.org ? `, ${esc(FOR.org)}` : ""}.</b> ${esc(FOR.intro || "")}</p>
+    <div class="tabs">${FOR.items.map((it, i) => `<button type="button" data-i="${i}" aria-current="${i === FOR_I}">${esc(it.label)}<br><span class="meta">${esc(it.note || "")}</span></button>`).join("")}</div></div>`;
+}
+let FOR_I = 0;
+function showFor(i) {
+  FOR_I = i; const it = FOR.items[i];
+  const p = new URLSearchParams({ address: it.address }); if (it.pin) p.set("pin", it.pin);
+  $("#q").value = it.address;
+  CUR = { r: it.slice, p };
+  renderFree(it.slice, {});
+  out.querySelectorAll(".for .tabs button").forEach((b) => b.onclick = () => { showFor(Number(b.dataset.i)); scrollTo({ top: 0 }); });
+}
+
+function render(r, ms) {
+  const s = r.subject, P = s.parcel;
+  const byKey = Object.fromEntries(r.findings.map((f) => [f.key, f]));
+  const listName = Object.fromEntries(r.lists.map((l) => [l.id, l.name]));
+  const covered = r.lists.filter((l) => l.covered && !l.failed), missing = r.lists.filter((l) => !l.covered || l.failed);
+  const gen = new Date(r.generated);
+  const rows = r.lists.map((l) => {
+    const mine = r.findings.filter((f) => f.list === l.id);
+    const cells = BANDS.map((b) => b[1] <= l.miles || (b[1] === 0) ? `<td class="n">${mine.filter((f) => inBand(f.miles, b)).length}</td>` : `<td class="n meta">–</td>`).join("");
+    if (!l.covered || l.failed) return `<tr class="miss"><td>${esc(l.name)}<div class="meta">${l.failed ? "Source did not answer for this report." : esc(l.source)}</div></td><td>${esc(l.level)}</td><td class="k">${esc(l.cfr)}</td><td>${fmtDist(l)}</td><td colspan="7"><b>Not searched</b></td></tr>`;
+    return `<tr><td>${esc(l.name)}<div class="meta">${esc(l.source)}</div></td><td>${esc(l.level)}</td><td class="k">${esc(l.cfr)}</td><td>${fmtDist(l)}</td>${cells}<td class="n"><b>${l.count}</b></td><td class="n">${l.open || 0}</td></tr>`;
+  }).join("");
+
+  const groups = r.lists.filter((l) => l.count).map((l) => {
+    const mine = r.findings.filter((f) => f.list === l.id);
+    return `<h3>${esc(l.name)} <span class="meta">· ${mine.length} within ${fmtDist(l)}</span></h3><div class="wrap"><table><thead><tr><th>Ref</th><th>Name</th><th>Address on file</th><th class="n">Distance</th><th>Status</th><th>Detail</th><th>Record</th></tr></thead><tbody>${
+      mine.map((f) => `<tr><td class="k">${f.key}</td><td>${esc(f.name)}</td><td>${esc(f.address)}</td><td class="n">${fmtMi(f.miles)}</td><td><span class="pill ${f.open ? "open" : ""}">${esc(f.status)}</span>${f.opened || f.closed ? `<div class="meta">${f.opened ? "opened " + esc(f.opened) : ""}${f.closed ? (f.opened ? ", " : "") + "closed " + esc(f.closed) : ""}</div>` : ""}</td><td>${esc(f.detail)}<div class="meta">${esc(f.ids || "")}${f.located_by ? " · located by " + esc(f.located_by) : ""}</div></td><td><a href="${esc(f.url)}" target="_blank" rel="noopener">${esc(f.source)}</a></td></tr>`).join("")
+    }</tbody></table></div>`;
+  }).join("");
+
+  // Sanborn volumes collapse to one row; every other source keeps its own row.
+  const tl = r.historical.timeline;
+  const san = tl.filter((t) => t.kind.startsWith("Sanborn"));
+  const rest = tl.filter((t) => !t.kind.startsWith("Sanborn"));
+  const sanRow = san.length ? [{ year: san[0].year, kind: "Sanborn fire insurance maps", detail: `${san.length} editions for ${s.city}: ${san.map((t) => `<a href="${esc(t.url)}" target="_blank" rel="noopener">${t.year}</a>`).join(", ")}. Find the subject block on each edition's index sheet.`, html: true, source: "Library of Congress", url: "https://www.loc.gov/collections/sanborn-maps/" }] : [];
+  const tlRows = [...sanRow, ...rest].sort((a, b) => (a.year ?? 9999) - (b.year ?? 9999)).map((t) => `<tr><td class="n">${t.year ?? "Undated"}</td><td>${esc(t.kind)}</td><td>${t.html ? t.detail : esc(t.detail)}</td><td>${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener">${esc(t.source)}</a>` : esc(t.source)}</td></tr>`).join("");
+
+  const rules = r.risk.rules.map((x) => `<tr><td class="k">${x.id}</td><td>${esc(x.text)}</td><td class="${x.rows.length ? "fired" : ""}">${x.rows.length ? `Fired on ${x.rows.length}` : "Did not fire"}</td><td>${x.rows.slice(0, 12).map((k) => `<span class="k">${k}</span> ${esc(byKey[k].name)} <span class="meta">(${esc(listName[byKey[k].list])}, ${byKey[k].miles === 0 ? "on subject" : byKey[k].miles.toFixed(3) + " mi"})</span>`).join("<br>")}${x.rows.length > 12 ? `<br><span class="meta">and ${x.rows.length - 12} more in section 3</span>` : ""}</td></tr>`).join("");
+
+  out.innerHTML = `
+  <div class="actions"><button onclick="window.print()">Print or save as PDF</button><button class="ghost" onclick="navigator.clipboard&&navigator.clipboard.writeText(location.href)">Copy link</button></div>
+  <article class="doc">
+    <div class="stamp">DRAFT FOR ENVIRONMENTAL PROFESSIONAL REVIEW</div>
+    <div class="title"><h1>Records Search with Risk Assessment</h1><span class="meta">Records searched ${gen.toLocaleString("en-US", { dateStyle: "long", timeStyle: "short" })}</span></div>
+    <p class="meta">Prepared under SBA SOP 50 10 8 and Procedural Notice 5000-866054 for an SBA loan over $250,000. Government records searched per 40 CFR 312.26 at the larger of the CFR and ASTM E1527-21 search distances.</p>
+
+    <h2>1. Subject property</h2>
+    <dl class="kv">
+      <dt>Address as entered</dt><dd>${esc(s.input)}</dd>
+      <dt>Geocoded address</dt><dd>${esc(s.matched)} <span class="meta">(U.S. Census geocoder)</span></dd>
+      ${P ? `<dt>County parcel</dt><dd>${esc(P.address)} · PIN ${esc(P.pin)}</dd>
+      <dt>Parcel matched by</dt><dd>${esc(P.match)}</dd>
+      <dt>Owner of record</dt><dd>${esc(P.owner || "Not recorded")}</dd>
+      <dt>Use class</dt><dd>${esc(P.use || "Not recorded")}</dd>
+      <dt>Current building built</dt><dd>${P.year_built || "Not recorded"}</dd>
+      <dt>Parcel area</dt><dd>${P.acres != null ? P.acres + " acres" : "Not recorded"}</dd>
+      <dt>Legal description (abbrev.)</dt><dd>${esc(P.legal || "Not recorded")}</dd>
+      <dt>Parcel source</dt><dd><a href="${esc(P.source_url)}" target="_blank" rel="noopener">${esc(P.source)}</a></dd>` : `<dt>County parcel</dt><dd>${esc(s.parcel_note)}</dd>`}
+      <dt>County</dt><dd>${esc(s.county || "")}</dd>
+      <dt>Coordinates</dt><dd>${s.lat.toFixed(6)}, ${s.lon.toFixed(6)} ${P ? '<span class="meta">(parcel centroid)</span>' : ""}</dd>
+      <dt>Distances measured from</dt><dd>${s.has_boundary ? "The subject parcel boundary, per 40 CFR 312.26(d)" : "The geocoded address point (no parcel boundary)"}</dd>
+    </dl>
+
+    <h2>2. Suggested risk call</h2>
+    <div class="call"><span>Suggested by rule:</span><b class="${r.risk.suggestion.split(" ")[0]}">${esc(r.risk.suggestion)}</b><span class="meta">${esc(r.risk.basis)} The conclusion in section 5 is the Environmental Professional's.</span></div>
+    <div class="wrap"><table style="margin-top:8px"><thead><tr><th>Rule</th><th>A High Risk suggestion when</th><th>Result</th><th>Records it fired on</th></tr></thead><tbody>${rules}</tbody></table></div>
+
+    <h2>3. Government records searched</h2>
+    <p class="meta">${covered.length} of ${r.lists.length} lists searched. Counts by distance from the subject; "–" is beyond that list's search distance. Open = an active file.</p>
+    <div class="wrap"><table><thead><tr><th>List</th><th>Level</th><th>40 CFR</th><th>Searched to</th>${BANDS.map((b) => `<th class="n">${b[2]}</th>`).join("")}<th class="n">Total</th><th class="n">Open</th></tr></thead><tbody>${rows}</tbody></table></div>
+    ${groups || "<p>No record on any searched list falls within its search distance.</p>"}
+    ${r.unlocated && r.unlocated.length ? `<h3>Records in ${esc(s.city)} the agency located only to a ZIP or city centroid</h3><p class="meta">${r.unlocated.length} records within the search radius carry no real location, so no distance is given. Check each address against the subject.</p><div class="wrap"><table><thead><tr><th>Name</th><th>Address on file</th><th>List</th><th>Status</th><th>Record</th></tr></thead><tbody>${r.unlocated.map((u) => `<tr><td>${esc(u.name)}</td><td>${esc(u.address)}</td><td>${esc(listName[u.list])}</td><td>${esc(u.status)}</td><td><a href="${esc(u.url)}" target="_blank" rel="noopener">${esc(u.source)}</a></td></tr>`).join("")}</tbody></table></div>` : ""}
+    ${r.sems_unplaced.length ? `<h3>Unmapped federal SEMS records in ${esc(s.city)}</h3><p class="meta">These ${r.sems_unplaced.length} SEMS records list this city but carry no coordinate EPA or the Census geocoder could place. Check each address against the subject.</p><div class="wrap"><table><thead><tr><th>Name</th><th>Address on file</th><th>List</th><th>Record</th></tr></thead><tbody>${r.sems_unplaced.map((u) => `<tr><td>${esc(u.name)}</td><td>${esc(u.address)}</td><td>${esc(listName[u.list])}</td><td><a href="${esc(u.url)}" target="_blank" rel="noopener">${esc(u.epa_id)}</a></td></tr>`).join("")}</tbody></table></div>` : ""}
+
+    <h2>4. Historical use</h2>
+    <p class="meta">SBA requires historical use records back to 1940 or first developed use. Sources found for this location reach back to ${r.historical.earliest_year ?? "no dated source"}${r.historical.reaches_1940 ? ", before 1940" : ""}.</p>
+    <div class="wrap"><table><thead><tr><th class="n">Year</th><th>Source</th><th>What it holds for this property</th><th>Link</th></tr></thead><tbody>${tlRows}</tbody></table></div>
+    <h3>For the reviewer to read and record</h3>
+    <div class="wrap"><table><thead><tr><th>Source</th><th>Where</th><th style="width:45%">Uses observed, by year</th></tr></thead><tbody>
+      ${[{ kind: "USGS topographic maps above", source: "Linked in the table", url: "" }, { kind: "Sanborn maps above", source: "Linked in the table", url: "" }, ...r.historical.to_review].map((t) => `<tr><td>${esc(t.kind)}</td><td>${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener">${esc(t.source)}</a>` : esc(t.source)}</td><td><div class="line" contenteditable="true" data-ph="Enter findings"></div></td></tr>`).join("")}
+    </tbody></table></div>
+
+    <h2>5. Environmental Professional</h2>
+    <p>I declare that, to the best of my professional knowledge and belief, I meet the definition of Environmental Professional as defined in 40 CFR 312.10(b), and I have reviewed the records search above.</p>
+    <p><span class="box"></span>Low risk &nbsp;&nbsp;&nbsp; <span class="box"></span>High risk</p>
+    <div class="sig">
+      <div><div class="line" contenteditable="true" data-ph="Name"></div><div class="lab">Environmental Professional</div></div>
+      <div><div class="line" contenteditable="true" data-ph="Firm"></div><div class="lab">Firm</div></div>
+      <div><div class="line" contenteditable="true" data-ph="Credentials"></div><div class="lab">Qualifications under 40 CFR 312.10(b)</div></div>
+      <div><div class="line" contenteditable="true" data-ph="Date"></div><div class="lab">Date</div></div>
+      <div><div class="line"></div><div class="lab">Signature</div></div>
+      <div><div class="line" contenteditable="true" data-ph="Rationale for any changed search distance, 312.26(d)"></div><div class="lab">Search distance changes and rationale</div></div>
+    </div>
+
+    <h2>6. Method and sources</h2>
+    <ul class="meta">
+      <li>Search distance per list = the larger of 40 CFR 312.26(c) and ASTM E1527-21 Table 1. "Adjoining" is searched to ${r.adjoining_miles} mile of the parcel boundary, which reaches across a public street. Lists the CFR applies to the subject property alone are searched on the subject parcel.</li>
+      <li>${esc(r.citations.cfr)}</li><li>${esc(r.citations.astm)}</li><li>${esc(r.citations.sba)}</li>
+      <li>Federal SEMS list cached from EPA Envirofacts on ${esc(r.sems_built_on)}; every other register was queried live when this report was generated.</li>
+      <li>Register coordinates are the agency's own, mostly address-matched; the "located by" line on each record says how.</li>
+      ${missing.length ? `<li>Not searched: ${missing.map((l) => esc(l.name)).join("; ")}.</li>` : ""}
+      ${r.errors.length ? `<li class="err">Sources that did not answer: ${r.errors.map(esc).join("; ")}</li>` : ""}
+      <li>Built in ${(r.elapsed_ms / 1000).toFixed(1)} s. Source code: <a href="https://github.com/2016judea/rsra-draft">github.com/2016judea/rsra-draft</a></li>
+    </ul>
+    <div class="foot">DRAFT FOR ENVIRONMENTAL PROFESSIONAL REVIEW · ${esc(P ? P.address : s.matched)} · searched ${gen.toISOString().slice(0, 10)}</div>
+  </article>`;
+  document.title = `RSRA Draft · ${P ? P.address : s.matched}`;
+}
+
+$("#f").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const a = $("#q").value.trim();
+  if (!a) return;
+  const url = `${FOR ? "/" : ""}?${new URLSearchParams({ address: a })}`;
+  if (FOR) { location.href = url; return; }
+  history.pushState(null, "", url);
+  run();
+});
+window.addEventListener("popstate", run);
+run();
+</script>
+</body>
+</html>

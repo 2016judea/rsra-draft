@@ -89,6 +89,8 @@ const qs = (o) => new URLSearchParams(o).toString();
 
 // ---- step 1: geocode + parcel ---------------------------------------------
 const situs = (a) => [a.ANUMBER, a.ST_PRE_DIR, a.ST_NAME, a.ST_POS_TYP, a.ST_POS_DIR].filter((x) => x != null && x !== "").join(" ") + (a.CTU_NAME ? `, ${a.CTU_NAME}` : "");
+// Right-of-way and other non-parcel polygons in the Met Council layer: no real PIN, no situs number.
+export const isRow = (a) => /\bR\.?O\.?W\b|right.of.way|^row$/i.test(String(a?.COUNTY_PIN || "")) || /right.of.way/i.test(String(a?.USECLASS1 || ""));
 export async function locate(address, pin, usePoint) {
   const g = await getJson(`${GEOCODER}?${qs({ address, benchmark: "Public_AR_Current", vintage: "Current_Current", layers: "Counties", format: "json" })}`);
   const m = g.result?.addressMatches?.[0];
@@ -130,14 +132,15 @@ export async function locate(address, pin, usePoint) {
   if (!pick) {
     const fp = await getJson(`${PARCELS}/${layer}/query?${qs({ f: "json", geometry: `${subject.lon},${subject.lat}`, geometryType: "esriGeometryPoint", inSR: 4326,
       spatialRel: "esriSpatialRelIntersects", outSR: 4326, returnGeometry: true, outFields: OUT })}`);
-    const f = (fp.features || [])[0];
+    // A point in the street lands in a right-of-way polygon ("County RoW"), which is a road, never the subject.
+    const f = (fp.features || []).find((x) => !isRow(x.attributes));
     if (f) pick = { f, how: "parcel containing the geocoded point; the county lists a different situs address, confirm it is the subject" };
   }
   if (!pick && !usePoint) {
     // Hand the choice back: the parcels within 300 ft, nearest first.
     const fn = await getJson(`${PARCELS}/${layer}/query?${qs({ f: "json", geometry: `${subject.lon},${subject.lat}`, geometryType: "esriGeometryPoint", inSR: 4326,
       distance: 300, units: "esriSRUnit_Foot", spatialRel: "esriSpatialRelIntersects", outSR: 4326, returnGeometry: true, outFields: OUT })}`);
-    const candidates = (fn.features || []).map((f) => ({ f, d: dist0(f) })).sort((x, y) => x.d - y.d).slice(0, 8).map(({ f, d }) => {
+    const candidates = (fn.features || []).filter((f) => !isRow(f.attributes)).map((f) => ({ f, d: dist0(f) })).sort((x, y) => x.d - y.d).slice(0, 8).map(({ f, d }) => {
       const a = f.attributes;
       return { pin: a.COUNTY_PIN, address: situs(a), owner: a.OWNER_NAME || a.TAX_NAME, use: a.USECLASS1, feet: Math.round(d * MI_FT) };
     });
@@ -488,5 +491,36 @@ export async function buildReport(address, { pin, usePoint } = {}) {
       ] },
     risk: riskCall(hits), rules: RULES.map(({ id, text }) => ({ id, text })),
     citations: LISTS.citations, adjoining_miles: LISTS.adjoining_miles, errors,
+  };
+}
+
+// ---- the free slice --------------------------------------------------------
+// What anyone sees for any address without paying: the subject parcel, the
+// suggested call with HOW MANY records each rule fired on, and the count of
+// records per list per distance band. Never a record's name, address, status or
+// link, never the historical timeline, never the signature page: those are the
+// paid draft (README "## The paywall").
+export const BAND_EDGES = [[0, 0], [0, 0.125], [0.125, 0.25], [0.25, 0.5], [0.5, 1]];
+const inBand = (m, [lo, hi]) => (hi === 0 ? m === 0 : m > lo && m <= hi + 1e-9);
+export function freeSlice(r) {
+  if (r.error || r.choose) return r;
+  const tl = r.historical.timeline;
+  return {
+    free: true, generated: r.generated, elapsed_ms: r.elapsed_ms,
+    subject: r.subject,
+    lists: r.lists.map((l) => {
+      const mine = r.findings.filter((f) => f.list === l.id);
+      return { ...l, bands: BAND_EDGES.map((b) => mine.filter((f) => inBand(f.miles, b)).length) };
+    }),
+    totals: {
+      findings: r.findings.length,
+      on_subject: r.findings.filter((f) => f.miles === 0).length,
+      open: r.findings.filter((f) => f.open === true).length,
+      unlocated: r.unlocated.length, sems_unplaced: r.sems_unplaced.length,
+    },
+    historical: { earliest_year: r.historical.earliest_year, reaches_1940: r.historical.reaches_1940,
+      sources: tl.length, sanborn: tl.filter((t) => /^Sanborn/.test(t.kind)).length, topos: tl.filter((t) => /topographic/i.test(t.kind)).length },
+    risk: { suggestion: r.risk.suggestion, basis: r.risk.basis, rules: r.risk.rules.map(({ id, text, rows }) => ({ id, text, n: rows.length })) },
+    citations: r.citations, adjoining_miles: r.adjoining_miles, errors: r.errors, sems_built_on: r.sems_built_on,
   };
 }
