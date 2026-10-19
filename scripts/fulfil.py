@@ -45,6 +45,17 @@ def stripe(path):
     return j
 
 
+def sessions(path):
+    """Every session, not just the newest 100: Stripe caps a list page at 100 and signals
+    the rest with has_more; a bare limit=100 read silently shows the newest hundred only."""
+    while True:
+        j = stripe(path)
+        yield from j["data"]
+        if not j.get("has_more") or not j["data"]:
+            return
+        path = path.split("&starting_after=")[0] + f"&starting_after={j['data'][-1]['id']}"
+
+
 def show(s):
     m = s.get("metadata") or {}
     q = {"address": m.get("address", ""), **({"pin": m["pin"]} if m.get("pin") else {}), "pw": m.get("password", "")}
@@ -71,7 +82,7 @@ if arg == "--comp-pw":
         w.writerow([dt.date.today().isoformat(), label, nonce])
     print(f"{label}\n  password {pw}  (opens any property)")
 elif arg == "--recent":
-    for s in stripe(f"checkout/sessions?limit=100&created[gte]={LAUNCH}")["data"]:
+    for s in sessions(f"checkout/sessions?limit=100&created[gte]={LAUNCH}"):
         if (s.get("metadata") or {}).get("product") == "rsra-draft":
             show(s)
 else:
